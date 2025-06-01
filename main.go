@@ -89,7 +89,13 @@ func main() {
 		log.Fatalf("Unable to retrieve Calendar client: %v", err)
 	}
 
+	calendarList, err := srv.CalendarList.List().Do()
+	for _, cal := range calendarList.Items {
+		fmt.Println(cal.Id)
+	}
+
 	t := time.Now().Format(time.RFC3339)
+
 	events, err := srv.Events.List("primary").ShowDeleted(false).
 		SingleEvents(true).TimeMin(t).MaxResults(10).OrderBy("startTime").Do()
 	if err != nil {
