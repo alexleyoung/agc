@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/alexleyoung/auto-gcal/internal/ai"
 	"github.com/alexleyoung/auto-gcal/internal/auth"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -44,4 +45,6 @@ func Run() {
 			fmt.Printf("%v (%v)\n", item.Summary, date)
 		}
 	}
+
+	ai.Chat()
 }
