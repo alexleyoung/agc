@@ -1,9 +1,16 @@
 package calendar
 
-import "google.golang.org/api/calendar/v3"
+import (
+	"log"
 
-func CreateEvent(summary, description, start, end string) *calendar.Event {
-	return &calendar.Event{
+	"github.com/alexleyoung/auto-gcal/internal/auth"
+	"golang.org/x/net/context"
+	"google.golang.org/api/calendar/v3"
+	"google.golang.org/api/option"
+)
+
+func CreateEvent(ctx context.Context, calendarID, summary, description, start, end string) (*calendar.Event, error) {
+	ev := &calendar.Event{
 		Summary:     summary,
 		Description: description,
 		Start: &calendar.EventDateTime{
@@ -13,4 +20,19 @@ func CreateEvent(summary, description, start, end string) *calendar.Event {
 			DateTime: end,
 		},
 	}
+
+	client := auth.GetClient()
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Calendar client: %v", err)
+		return &calendar.Event{}, err
+	}
+
+	ev, err = srv.Events.Insert(calendarID, ev).Do()
+	if err != nil {
+		log.Fatalf("Failed to create event \"%s\": %v", ev.Summary, err)
+		return &calendar.Event{}, err
+	}
+
+	return ev, nil
 }
