@@ -9,8 +9,7 @@ import (
 	"google.golang.org/genai"
 )
 
-func Chat() {
-	ctx := context.Background()
+func Chat(ctx context.Context, prompt string) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  os.Getenv("GEMINI_API_KEY"),
 		Backend: genai.BackendGeminiAPI,

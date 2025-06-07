@@ -13,6 +13,8 @@ import (
 )
 
 func Run() {
+	InitConfig()
+
 	ctx := context.Background()
 	client := auth.GetClient()
 
@@ -46,5 +48,5 @@ func Run() {
 		}
 	}
 
-	ai.Chat()
+	ai.Chat(ctx, "Hey Gemini")
 }
