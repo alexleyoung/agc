@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/alexleyoung/auto-gcal/internal/server/handlers"
 	"github.com/joho/godotenv"
 )
 
@@ -17,13 +18,7 @@ func Run() {
 
 	mux := http.NewServeMux()
 
-	// mux.HandleFunc("GET /", pages.Home)
-	// mux.HandleFunc("GET /blab/{slug}", pages.Post)
-	// mux.HandleFunc("GET /yap", pages.Create)
-	// mux.HandleFunc("GET /edit", pages.Edit)
-	//
-	// mux.HandleFunc("POST /blab", handlers.PostPost)
-	// mux.HandleFunc("PATCH /blab", handlers.PatchPost)
+	mux.HandleFunc("GET /", handlers.Chat)
 
 	log.Println("Server starting on port :" + PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, mux))
