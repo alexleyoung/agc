@@ -16,24 +16,29 @@ func getService(ctx context.Context) (*calendar.Service, error) {
 	return srv, err
 }
 
-func GetCalendar(ctx context.Context, name string) (*calendar.Calendar, error) {
+func GetCalendarID(ctx context.Context, name string) (string, error) {
 	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
-		return &calendar.Calendar{}, err
+		return "", err
 	}
 
 	list, err := srv.CalendarList.List().Do()
 	for _, cal := range list.Items {
 		if cal.Summary == name {
-			return srv.Calendars.Get(cal.Id).Do()
+			cal, err := srv.Calendars.Get(cal.Id).Do()
+			if err != nil {
+				log.Printf("Failed to retrieve calendar %s: %v", cal.Summary, err)
+				return "", err
+			}
+			return cal.Id, nil
 		}
 	}
 
-	return srv.Calendars.Get("primary").Do()
+	return "primary", nil
 }
 
-func CreateEvent(ctx context.Context, cal *calendar.CalendarListEntry, summary, description, start, end string) (*calendar.Event, error) {
+func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end string) (*calendar.Event, error) {
 	ev := &calendar.Event{
 		Summary:     summary,
 		Description: description,
@@ -51,7 +56,7 @@ func CreateEvent(ctx context.Context, cal *calendar.CalendarListEntry, summary, 
 		return &calendar.Event{}, err
 	}
 
-	ev, err = srv.Events.Insert(cal.Id, ev).Do()
+	ev, err = srv.Events.Insert(calendarID, ev).Do()
 	if err != nil {
 		log.Printf("Failed to create event \"%s\": %v", ev.Summary, err)
 		return &calendar.Event{}, err
