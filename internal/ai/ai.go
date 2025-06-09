@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -23,8 +24,8 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Default to \"primary\"."},
 			"summary":     {Type: "string", Description: "The title of the event. Required."},
 			"description": {Type: "string", Description: "The description of the event. Default to empty."},
-			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with a timezone offset. Required."},
-			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with a timezone offset. Required"},
+			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required."},
+			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required"},
 		},
 	},
 }}
@@ -85,18 +86,12 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 func executeFunctionCall(ctx context.Context, fn *genai.FunctionCall) (string, error) {
 	switch fn.Name {
 	case "create_event":
-		var args struct {
-			CalendarID  string `json:"calendar_id"`
-			Summary     string `json:"summary"`
-			Description string `json:"description"`
-			Start       string `json:"start"`
-			End         string `json:"end"`
-		}
-		_, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End)
+		calID := fn.Args["calendar_id"] string
+		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End)
 		if err != nil {
 			return "", err
 		}
-		break
+		return fmt.Sprintf("Successfully created event \"%s\"", ev.Summary), nil
 	}
 	return "", fmt.Errorf("Unknown function: %s", fn.Name)
 }

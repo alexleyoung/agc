@@ -9,13 +9,11 @@ import (
 
 func Chat(w http.ResponseWriter, r *http.Request) {
 	prompt := r.URL.Query().Get("prompt")
-	res, err := ai.ChatLoop(r.Context(), "gemini-2.0-flash", prompt)
+	res, err := ai.Chat(r.Context(), "gemini-2.0-flash", prompt)
 	if err != nil {
 		log.Printf("error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	if len(res.FunctionCalls()) > 0 {
-
+	} else {
+		w.Write([]byte(res.Text()))
 	}
 }
