@@ -64,7 +64,8 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 		fns := result.FunctionCalls()
 		if len(fns) > 0 {
 			fn := fns[0]
-			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, fn.Args)
+			argsJSON, _ := json.Marshal(fn.Args)
+			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, argsJSON)
 
 			out, err := executeFunctionCall(ctx, fn)
 			if err != nil {
@@ -86,7 +87,22 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 func executeFunctionCall(ctx context.Context, fn *genai.FunctionCall) (string, error) {
 	switch fn.Name {
 	case "create_event":
-		calID := fn.Args["calendar_id"] string
+		var args struct {
+			CalendarID  string `json:"calendar_id"`
+			Summary     string `json:"summary"`
+			Description string `json:"description"`
+			Start       string `json:"start"`
+			End         string `json:"end"`
+		}
+
+		data, err := json.Marshal(fn.Args)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal args: %w", err)
+		}
+		if err := json.Unmarshal(data, &args); err != nil {
+			return "", fmt.Errorf("failed to decode args into struct: %w", err)
+		}
+
 		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End)
 		if err != nil {
 			return "", err
