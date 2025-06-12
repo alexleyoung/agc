@@ -18,7 +18,7 @@ func Run() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /", handlers.Chat)
+	mux.HandleFunc("GET /chat", handlers.Chat)
 
 	log.Println("Server starting on port :" + PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, mux))

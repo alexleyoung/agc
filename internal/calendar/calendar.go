@@ -58,7 +58,7 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 
 	ev, err = srv.Events.Insert(calendarID, ev).Do()
 	if err != nil {
-		log.Printf("Failed to create event \"%s\": %v", ev.Summary, err)
+		log.Printf("Failed to create event \"%s\": %v", summary, err)
 		return &calendar.Event{}, err
 	}
 
