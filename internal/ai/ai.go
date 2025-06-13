@@ -17,7 +17,7 @@ const (
 Your job is to extract relevant details from user input—like the event title, start and end times, and optional descriptions—and call the appropriate function to schedule the event.
 When the user describes an event, respond only by calling the create_event function with the appropriate parameters.
 After scheduling, confirm success by summarizing the event details back to the user in natural language.
-If any required information is missing or ambiguous, ask the user for clarification. Do not guess.`
+If the user does not specify a calendar, use their primary calendar.`
 )
 
 var functionDeclarations = []*genai.FunctionDeclaration{{
@@ -26,11 +26,12 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	Parameters: &genai.Schema{
 		Type: "object",
 		Properties: map[string]*genai.Schema{
-			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Default to \"primary\"."},
+			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in."},
 			"summary":     {Type: "string", Description: "The title of the event. Required."},
-			"description": {Type: "string", Description: "The description of the event. Default to empty."},
+			"description": {Type: "string", Description: "The description of the event."},
 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required."},
 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required"},
+			"timezone":    {Type: "string", Description: "The timezone as an IANA Time Zone Database name. Required"},
 		},
 	},
 }}
@@ -49,7 +50,7 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 		{Role: "user", Parts: []*genai.Part{{Text: prompt}}},
 	}
 	var result *genai.GenerateContentResponse
-	for step := 0; step < MAX_STEPS; step++ {
+	for _ = range MAX_STEPS {
 		// prompt model
 		result, err = client.Models.GenerateContent(ctx, model, history, &genai.GenerateContentConfig{
 			SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
