@@ -34,7 +34,18 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"timezone":    {Type: "string", Description: "The timezone as an IANA Time Zone Database name. Required"},
 		},
 	},
-}}
+},
+	{
+		Name:        "get_users_current_datetime",
+		Description: "Fetches the current time as an RFC3339 string according to a user's calendar's timezone",
+		Parameters: &genai.Schema{
+			Type: "object",
+			Properties: map[string]*genai.Schema{
+				"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in."},
+			},
+		},
+	},
+}
 
 func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateContentResponse, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
@@ -50,14 +61,12 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 		{Role: "user", Parts: []*genai.Part{{Text: prompt}}},
 	}
 	var result *genai.GenerateContentResponse
-	for _ = range MAX_STEPS {
+	for range MAX_STEPS {
 		// prompt model
 		result, err = client.Models.GenerateContent(ctx, model, history, &genai.GenerateContentConfig{
 			SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
 			Tools: []*genai.Tool{
-				&genai.Tool{
-					FunctionDeclarations: functionDeclarations,
-				},
+				{FunctionDeclarations: functionDeclarations},
 			},
 		})
 		if err != nil {
@@ -71,10 +80,14 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 		fns := result.FunctionCalls()
 		if len(fns) > 0 {
 			fn := fns[0]
-			argsJSON, _ := json.Marshal(fn.Args)
-			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, argsJSON)
 
-			out, err := executeFunctionCall(ctx, fn)
+			args, err := json.Marshal(fn.Args)
+			if err != nil {
+				return &genai.GenerateContentResponse{}, fmt.Errorf("failed to marshal args: %w", err)
+			}
+			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, args)
+
+			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
 				return &genai.GenerateContentResponse{}, err
@@ -92,8 +105,8 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 	return &genai.GenerateContentResponse{}, fmt.Errorf("Max steps reached without resolution")
 }
 
-func executeFunctionCall(ctx context.Context, fn *genai.FunctionCall) (string, error) {
-	switch fn.Name {
+func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
+	switch name {
 	case "create_event":
 		var args struct {
 			CalendarID  string `json:"calendar_id"`
@@ -103,11 +116,7 @@ func executeFunctionCall(ctx context.Context, fn *genai.FunctionCall) (string, e
 			End         string `json:"end"`
 		}
 
-		data, err := json.Marshal(fn.Args)
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal args: %w", err)
-		}
-		if err := json.Unmarshal(data, &args); err != nil {
+		if err := json.Unmarshal(argsJSON, &args); err != nil {
 			return "", fmt.Errorf("failed to decode args into struct: %w", err)
 		}
 
@@ -116,6 +125,23 @@ func executeFunctionCall(ctx context.Context, fn *genai.FunctionCall) (string, e
 			return "", err
 		}
 		return fmt.Sprintf("Successfully created event \"%s\"", ev.Summary), nil
+
+	case "get_users_current_datetime":
+		var args struct {
+			CalendarID string `json:"calendar_id"`
+		}
+		if err := json.Unmarshal(argsJSON, &args); err != nil {
+			return "", fmt.Errorf("failed to decode args into struct: %w", err)
+		}
+
+		time, err := calendar.GetUserCurrentDateTime(ctx, args.CalendarID)
+		if err != nil {
+			return "", fmt.Errorf("failed to fetch users local time")
+		}
+
+		log.Print(time)
+		return fmt.Sprintf("Users time in %s calendar: %s", args.CalendarID, time), nil
 	}
-	return "", fmt.Errorf("Unknown function: %s", fn.Name)
+
+	return "", fmt.Errorf("Unknown function: %s", name)
 }
