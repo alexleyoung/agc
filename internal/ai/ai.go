@@ -36,14 +36,8 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	},
 },
 	{
-		Name:        "get_users_current_datetime",
-		Description: "Fetches the current time as an RFC3339 string according to a user's calendar's timezone",
-		Parameters: &genai.Schema{
-			Type: "object",
-			Properties: map[string]*genai.Schema{
-				"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in."},
-			},
-		},
+		Name:        "get_current_time",
+		Description: "Fetches the current time in UTC as an RFC3339 string",
 	},
 }
 
@@ -126,21 +120,10 @@ func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (str
 		}
 		return fmt.Sprintf("Successfully created event \"%s\"", ev.Summary), nil
 
-	case "get_users_current_datetime":
-		var args struct {
-			CalendarID string `json:"calendar_id"`
-		}
-		if err := json.Unmarshal(argsJSON, &args); err != nil {
-			return "", fmt.Errorf("failed to decode args into struct: %w", err)
-		}
-
-		time, err := calendar.GetUserCurrentDateTime(ctx, args.CalendarID)
-		if err != nil {
-			return "", fmt.Errorf("failed to fetch users local time")
-		}
-
+	case "get_current_time":
+		time := calendar.Now()
 		log.Print(time)
-		return fmt.Sprintf("Users time in %s calendar: %s", args.CalendarID, time), nil
+		return fmt.Sprintf("Current time: %s", time), nil
 	}
 
 	return "", fmt.Errorf("Unknown function: %s", name)

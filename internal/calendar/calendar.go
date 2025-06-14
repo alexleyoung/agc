@@ -10,13 +10,6 @@ import (
 	"google.golang.org/api/option"
 )
 
-func getOffsetString(timezone string) string {
-	switch timezone {
-	default:
-		return ""
-	}
-}
-
 func getService(ctx context.Context) (*calendar.Service, error) {
 	client := auth.GetClient()
 
@@ -47,23 +40,8 @@ func GetCalendarID(ctx context.Context, name string) (string, error) {
 }
 
 // Get the current timestamp with the calendar's timezone
-func GetUserCurrentDateTime(ctx context.Context, calendarID string) (string, error) {
-	srv, err := getService(ctx)
-	if err != nil {
-		log.Printf("Unable to retrieve calendar service: %v", err)
-		return "", err
-	}
-
-	// get calendar's timezone
-	cal, err := srv.Calendars.Get(calendarID).Do()
-	if err != nil {
-		log.Printf("Unable to retrieve calendar: %v", err)
-		return "", err
-	}
-
-	timezone := cal.TimeZone
-	loc, err := time.LoadLocation(timezone)
-	return time.Now().In(loc).String(), nil
+func Now() string {
+	return time.Now().UTC().Format(time.RFC3339)
 }
 
 func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end string) (*calendar.Event, error) {
