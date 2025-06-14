@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	MAX_STEPS     = 5
+	MAX_STEPS     = 10
 	SYSTEM_PROMPT = `You are an intelligent assistant that helps users manage their Google Calendar.
 Your job is to extract relevant details from user input—like the event title, start and end times, and optional descriptions—and call the appropriate function to schedule the event.
 When the user describes an event, respond only by calling the create_event function with the appropriate parameters.
 After scheduling, confirm success by summarizing the event details back to the user in natural language.
-If the user does not specify a calendar, use their primary calendar.`
+If the user does not specify a calendar, use their primary calendar. Always say your thoughts at each step.`
 )
 
 var functionDeclarations = []*genai.FunctionDeclaration{{
@@ -31,7 +31,7 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"description": {Type: "string", Description: "The description of the event."},
 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required."},
 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required"},
-			"timezone":    {Type: "string", Description: "The timezone as an IANA Time Zone Database name. Required"},
+			// "timezone":    {Type: "string", Description: "The timezone as an IANA Time Zone Database name. Required"},
 		},
 	},
 },
