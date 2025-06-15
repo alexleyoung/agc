@@ -14,11 +14,12 @@ import (
 const (
 	MAX_STEPS     = 10
 	SYSTEM_PROMPT = `You are an intelligent assistant that helps users manage their Google Calendar.
-Your job is to extract relevant details from user input—like the event title, start and end times, and optional descriptions—and call the appropriate function to schedule the event.
-When the user describes an event, respond only by calling the create_event function with the appropriate parameters.
-After scheduling, confirm success by summarizing the event details back to the user in natural language.
-If the user does not specify a calendar, use their primary calendar. Always say your thoughts at each step.`
+Your job is to extract relevant details from user input—like the event title, start and end times, and optional descriptions—and call the appropriate functions to schedule the event.
+Always try to schedule the event; if it fails, simply let the user know the error.
+After scheduling, confirm success by summarizing the event details back to the user in natural language.`
 )
+
+var TEMPERATURE float32 = 0
 
 var functionDeclarations = []*genai.FunctionDeclaration{{
 	Name:        "create_event",
@@ -29,9 +30,8 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in."},
 			"summary":     {Type: "string", Description: "The title of the event. Required."},
 			"description": {Type: "string", Description: "The description of the event."},
-			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required."},
-			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339). Required"},
-			// "timezone":    {Type: "string", Description: "The timezone as an IANA Time Zone Database name. Required"},
+			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
+			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required"},
 		},
 	},
 },
@@ -62,6 +62,7 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 			Tools: []*genai.Tool{
 				{FunctionDeclarations: functionDeclarations},
 			},
+			Temperature: &TEMPERATURE,
 		})
 		if err != nil {
 			log.Printf("Error getting model response: %v", err)

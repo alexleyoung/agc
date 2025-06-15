@@ -51,6 +51,10 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 		return &calendar.Event{}, err
 	}
 
+	if calendarID == "" {
+		calendarID = "primary"
+	}
+
 	// get calendar's timezone
 	cal, err := srv.Calendars.Get(calendarID).Do()
 	if err != nil {
