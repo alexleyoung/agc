@@ -31,7 +31,7 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"summary":     {Type: "string", Description: "The title of the event. Required."},
 			"description": {Type: "string", Description: "The description of the event. Optional."},
 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required"},
+			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
 			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Optional."},
 		},
 	},
@@ -42,7 +42,7 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	},
 }
 
-func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateContentResponse, error) {
+func Chat(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  os.Getenv("GEMINI_API_KEY"),
 		Backend: genai.BackendGeminiAPI,
@@ -52,9 +52,11 @@ func Chat(ctx context.Context, model string, prompt string) (*genai.GenerateCont
 		return &genai.GenerateContentResponse{}, err
 	}
 
-	history := []*genai.Content{
-		{Role: "user", Parts: []*genai.Part{{Text: prompt}}},
-	}
+	history = append(history, &genai.Content{
+		Role:  "user",
+		Parts: []*genai.Part{{Text: prompt}},
+	})
+
 	var result *genai.GenerateContentResponse
 	for range MAX_STEPS {
 		// prompt model
