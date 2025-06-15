@@ -27,11 +27,12 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	Parameters: &genai.Schema{
 		Type: "object",
 		Properties: map[string]*genai.Schema{
-			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in."},
+			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
 			"summary":     {Type: "string", Description: "The title of the event. Required."},
-			"description": {Type: "string", Description: "The description of the event."},
+			"description": {Type: "string", Description: "The description of the event. Optional."},
 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required"},
+			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Optional."},
 		},
 	},
 },
@@ -109,13 +110,14 @@ func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (str
 			Description string `json:"description"`
 			Start       string `json:"start"`
 			End         string `json:"end"`
+			Timezone    string `json:"timezone"`
 		}
 
 		if err := json.Unmarshal(argsJSON, &args); err != nil {
 			return "", fmt.Errorf("failed to decode args into struct: %w", err)
 		}
 
-		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End)
+		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End, args.Timezone)
 		if err != nil {
 			return "", err
 		}

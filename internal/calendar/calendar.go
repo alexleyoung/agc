@@ -44,7 +44,7 @@ func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end string) (*calendar.Event, error) {
+func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end, timezone string) (*calendar.Event, error) {
 	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
@@ -56,10 +56,13 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 	}
 
 	// get calendar's timezone
-	cal, err := srv.Calendars.Get(calendarID).Do()
-	if err != nil {
-		log.Printf("Unable to retrieve calendar: %v", err)
-		return &calendar.Event{}, err
+	if timezone == "" {
+		cal, err := srv.Calendars.Get(calendarID).Do()
+		if err != nil {
+			log.Printf("Failed to fetch calendar %s: %v", calendarID, err)
+			return &calendar.Event{}, err
+		}
+		timezone = cal.TimeZone
 	}
 
 	ev := &calendar.Event{
@@ -67,11 +70,11 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 		Description: description,
 		Start: &calendar.EventDateTime{
 			DateTime: start,
-			TimeZone: cal.TimeZone,
+			TimeZone: timezone,
 		},
 		End: &calendar.EventDateTime{
 			DateTime: end,
-			TimeZone: cal.TimeZone,
+			TimeZone: timezone,
 		},
 	}
 
