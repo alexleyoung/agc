@@ -10,6 +10,11 @@ import (
 	"google.golang.org/api/option"
 )
 
+// Get the current timestamp with the calendar's timezone
+func Now() string {
+	return time.Now().UTC().Format(time.RFC3339)
+}
+
 func getService(ctx context.Context) (*calendar.Service, error) {
 	client := auth.GetClient()
 
@@ -37,11 +42,6 @@ func GetCalendarID(ctx context.Context, name string) (string, error) {
 	}
 
 	return "primary", nil
-}
-
-// Get the current timestamp with the calendar's timezone
-func Now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }
 
 func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end, timezone string) (*calendar.Event, error) {
@@ -85,4 +85,18 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 	}
 
 	return ev, nil
+}
+
+func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error) {
+	events := make([]*calendar.Event, 0)
+
+	srv, err := getService(ctx)
+	if err != nil {
+		log.Printf("Unable to retrieve calendar service: %v", err)
+		return nil, err
+	}
+
+	srv.Calendars.Get(calendarID).Do()
+
+	return events, nil
 }
