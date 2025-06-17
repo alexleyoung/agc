@@ -127,7 +127,6 @@ func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (str
 
 	case "get_current_time":
 		time := calendar.Now()
-		log.Print(time)
 		return fmt.Sprintf("Current time: %s", time), nil
 	}
 
