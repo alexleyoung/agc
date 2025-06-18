@@ -88,7 +88,7 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 }
 
 func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error) {
-	events := make([]*calendar.Event, 0)
+	list := make([]*calendar.Event, 0)
 
 	srv, err := getService(ctx)
 	if err != nil {
@@ -96,7 +96,15 @@ func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error
 		return nil, err
 	}
 
-	srv.Calendars.Get(calendarID).Do()
+	time := time.Now().Format(time.RFC3339)
+	orderBy := "startTime"
+	maxResults := int64(50)
+	events, err := srv.Events.List(calendarID).ShowDeleted(false).TimeMin(time).OrderBy(orderBy).MaxResults(maxResults).Do()
+	if err != nil {
+		log.Printf("Unable to retrieve events: %v", err)
+		return nil, err
+	}
+	list = events.Items
 
-	return events, nil
+	return list, nil
 }
