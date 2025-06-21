@@ -7,12 +7,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var db *sql.DB
+
 func Init() {
 	db, err := sql.Open("sqlite3", "./agc.db")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	createTables := `
     CREATE TABLE IF NOT EXISTS users (
@@ -34,5 +35,16 @@ func Init() {
 }
 
 func CreateUser(email string) error {
+	stmt, err := db.Prepare("INSERT INTO users (email) VALUES (?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(email)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
