@@ -1,39 +1,14 @@
 package server
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/alexleyoung/auto-gcal/internal/db"
 	"github.com/alexleyoung/auto-gcal/internal/server/handlers"
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 )
-
-func init() {
-	db, err := sql.Open("sqlite3", "./foo.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	createTables := `
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		email TEXT
-    );
-    CREATE TABLE IF NOT EXISTS auth (
-        user_id INTEGER NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES users(id),
-		token TEXT
-    );
-    `
-	_, err = db.Exec(createTables)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Table 'users' created successfully")
-}
 
 func Run() {
 	err := godotenv.Load()
@@ -41,6 +16,8 @@ func Run() {
 		log.Fatalf("Error loading environment: %v", err)
 	}
 	PORT := os.Getenv("PORT")
+
+	db.Init()
 
 	mux := http.NewServeMux()
 

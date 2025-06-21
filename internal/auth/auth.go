@@ -2,15 +2,12 @@ package auth
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -79,12 +76,6 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 
 // Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
-	db, err := sql.Open("sqlite3", "db")
-	if err != nil {
-		log.Printf("Failed to open DB: %v", err)
-		return
-	}
-
 	fmt.Printf("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {

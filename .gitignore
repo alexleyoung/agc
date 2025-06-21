@@ -4,3 +4,9 @@ token.json
 
 # env
 .env
+
+# db
+agc.db
+
+# misc
+.DS_Store

@@ -8,7 +8,7 @@ import (
 )
 
 func Init() {
-	db, err := sql.Open("sqlite3", "./foo.db")
+	db, err := sql.Open("sqlite3", "./agc.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,13 +20,19 @@ func Init() {
 		email TEXT
     );
     CREATE TABLE IF NOT EXISTS auth (
-        user_id INTEGER NOT NULL PRIMARY KEY FOREIGN KEY REFERENCES users(id),
-		token TEXT
+        user_id INTEGER NOT NULL PRIMARY KEY,
+		token TEXT,
+		FOREIGN KEY(user_id) REFERENCES users(id)
     );
     `
+
 	_, err = db.Exec(createTables)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Table 'users' created successfully")
+	log.Println("DB initialized successfully")
+}
+
+func CreateUser(email string) error {
+	return nil
 }
