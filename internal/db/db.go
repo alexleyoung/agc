@@ -1,17 +1,13 @@
-package server
+package db
 
 import (
 	"database/sql"
 	"log"
-	"net/http"
-	"os"
 
-	"github.com/alexleyoung/auto-gcal/internal/server/handlers"
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func init() {
+func Init() {
 	db, err := sql.Open("sqlite3", "./foo.db")
 	if err != nil {
 		log.Fatal(err)
@@ -33,20 +29,4 @@ func init() {
 		log.Fatal(err)
 	}
 	log.Println("Table 'users' created successfully")
-}
-
-func Run() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading environment: %v", err)
-	}
-	PORT := os.Getenv("PORT")
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /chat", handlers.Chat)
-
-	log.Println("Server starting on port :" + PORT)
-	log.Fatal(http.ListenAndServe(":"+PORT, mux))
-
 }
