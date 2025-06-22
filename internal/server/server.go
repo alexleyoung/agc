@@ -20,8 +20,7 @@ func Run() {
 	db.Init()
 
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /chat", handlers.Chat)
+	handlers.Setup(mux)
 
 	log.Println("Server starting on port :" + PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, mux))

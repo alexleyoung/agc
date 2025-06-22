@@ -5,6 +5,7 @@ import (
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/oauth2"
 )
 
 var db *sql.DB
@@ -48,3 +49,5 @@ func CreateUser(email string) error {
 
 	return nil
 }
+
+func SaveToken(userID string, token *oauth2.Token) error
