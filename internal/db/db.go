@@ -50,4 +50,6 @@ func CreateUser(email string) error {
 	return nil
 }
 
-func SaveToken(userID string, token *oauth2.Token) error
+func SaveToken(userID string, token *oauth2.Token) error {
+	return nil
+}

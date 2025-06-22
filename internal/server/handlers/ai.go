@@ -15,7 +15,7 @@ type ChatRequestBody struct {
 	History []*genai.Content `json:"history,omitempty"`
 }
 
-func Chat(w http.ResponseWriter, r *http.Request) {
+func chat(w http.ResponseWriter, r *http.Request) {
 	var body ChatRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Printf("Error parsing body: %s", err.Error())
@@ -45,4 +45,8 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Write([]byte(res.Text()))
 	}
+}
+
+func setupAI(mux *http.ServeMux) {
+	mux.HandleFunc("GET /chat", chat)
 }

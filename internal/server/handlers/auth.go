@@ -38,13 +38,13 @@ func extractUserInfoFromIDToken(idToken string) (UserInfo, error) {
 	return claims, nil
 }
 
-func GetAuthURL(w http.ResponseWriter, r *http.Request) {
+func getAuthURL(w http.ResponseWriter, r *http.Request) {
 	config := auth.GetConfig()
 	url := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func OAuthCallback(w http.ResponseWriter, r *http.Request) {
+func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	config := auth.GetConfig()
 
 	tok, err := config.Exchange(r.Context(), r.URL.Query().Get("code"))
@@ -69,5 +69,10 @@ func OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("Authenticated as user: " + info.Sub))
+	w.Write([]byte("Authenticated as user: " + info.Email))
+}
+
+func setupAuth(mux *http.ServeMux) {
+	mux.HandleFunc("GET /auth", getAuthURL)
+	mux.HandleFunc("GET /auth/callback", oauthCallback)
 }
