@@ -15,7 +15,7 @@ import (
 
 // Retrieve a token, saves the token, then returns the generated client.
 func GetClient() *http.Client {
-	config := getConfig()
+	config := GetConfig()
 
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
@@ -29,7 +29,7 @@ func GetClient() *http.Client {
 	return config.Client(context.Background(), tok)
 }
 
-func getConfig() *oauth2.Config {
+func GetConfig() *oauth2.Config {
 	b, err := os.ReadFile("credentials.json")
 
 	if err != nil {
@@ -44,9 +44,13 @@ func getConfig() *oauth2.Config {
 	return config
 }
 
+func GetAuthURL(config *oauth2.Config) string {
+	return config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+}
+
 // Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	authURL := GetAuthURL(config)
 	fmt.Printf("Go to the following link in your browser then type the "+
 		"authorization code: \n%v\n", authURL)
 
