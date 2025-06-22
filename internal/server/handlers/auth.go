@@ -12,26 +12,30 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type UserInfo struct {
+	Sub   string `json:"sub"`
+	Email string `json:"email"`
+}
+
 // takes JWT and parses google sub from it
-func extractSubFromIDToken(idToken string) (string, error) {
+func extractUserInfoFromIDToken(idToken string) (UserInfo, error) {
+	var claims UserInfo
+
 	parts := strings.Split(idToken, ".")
 	if len(parts) != 3 {
-		return "", fmt.Errorf("malformed ID token")
+		return claims, fmt.Errorf("Malformed ID token")
 	}
 
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return "", err
+		return claims, err
 	}
 
-	var claims struct {
-		Sub string `json:"sub"`
-	}
 	if err = json.Unmarshal(payload, &claims); err != nil {
-		return "", err
+		return claims, err
 	}
 
-	return claims.Sub, nil
+	return claims, nil
 }
 
 func GetAuthURL(w http.ResponseWriter, r *http.Request) {
@@ -54,16 +58,16 @@ func OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No ID token found in token response", http.StatusInternalServerError)
 	}
 
-	sub, err := extractSubFromIDToken(idTokenRaw)
+	info, err := extractUserInfoFromIDToken(idTokenRaw)
 	if err != nil {
 		http.Error(w, "Failed to extract user ID: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err = db.SaveToken(sub, tok); err != nil {
+	if err = db.SaveToken(info.Sub, tok); err != nil {
 		http.Error(w, "Failed to save token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("Authenticated as user: " + sub))
+	w.Write([]byte("Authenticated as user: " + info.Sub))
 }
