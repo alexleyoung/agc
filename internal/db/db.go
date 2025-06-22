@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 )
@@ -18,8 +19,8 @@ func Init() {
 
 	createTables := `
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		email TEXT
+        user_id TEXT NOT NULL PRIMARY KEY,
+		email TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS auth (
         user_id INTEGER NOT NULL PRIMARY KEY,
@@ -30,19 +31,19 @@ func Init() {
 
 	_, err = db.Exec(createTables)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to create DB:\n" + err.Error())
 	}
 	log.Println("DB initialized successfully")
 }
 
-func CreateUser(email string) error {
-	stmt, err := db.Prepare("INSERT INTO users (email) VALUES (?)")
+func CreateUser(id, email string) error {
+	stmt, err := db.Prepare("INSERT INTO users (user_id, email) VALUES (?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(email)
+	_, err = stmt.Exec(id, email)
 	if err != nil {
 		return err
 	}
@@ -50,6 +51,6 @@ func CreateUser(email string) error {
 	return nil
 }
 
-func SaveToken(userID string, token *oauth2.Token) error {
+func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
 	return nil
 }

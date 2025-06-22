@@ -1,35 +1,32 @@
 package auth
 
 import (
-	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/alexleyoung/auto-gcal/internal/db"
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
 )
 
-// Retrieve a token, saves the token, then returns the generated client.
-func GetClient() *http.Client {
-	config := GetConfig()
-
-	// The file token.json stores the user's access and refresh tokens, and is
-	// created automatically when the authorization flow completes for the first
-	// time.
-	tokFile := "token.json"
-	tok, err := tokenFromFile(tokFile)
-	if err != nil {
-		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
-	}
-	return config.Client(context.Background(), tok)
+type UserInfo struct {
+	Sub   string `json:"sub"`
+	Email string `json:"email"`
 }
 
-func GetConfig() *oauth2.Config {
+func GetClient() *http.Client {
+	// config := getSecretConfig()
+	return nil
+}
+
+func getSecretConfig() *oauth2.Config {
 	b, err := os.ReadFile("credentials.json")
 
 	if err != nil {
@@ -44,47 +41,53 @@ func GetConfig() *oauth2.Config {
 	return config
 }
 
-func GetAuthURL(config *oauth2.Config) string {
+func GetAuthURL() string {
+	config := getSecretConfig()
 	return config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 }
 
-// Request a token from the web, then returns the retrieved token.
-func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
-	authURL := GetAuthURL(config)
-	fmt.Printf("Go to the following link in your browser then type the "+
-		"authorization code: \n%v\n", authURL)
+func Authenticate(r *http.Request) (types.UserInfo, error) {
+	config := getSecretConfig()
 
-	var authCode string
-	if _, err := fmt.Scan(&authCode); err != nil {
-		log.Fatalf("Unable to read authorization code: %v", err)
-	}
-
-	tok, err := config.Exchange(context.TODO(), authCode)
+	tok, err := config.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
-		log.Fatalf("Unable to retrieve token from web: %v", err)
+		return types.UserInfo{}, err
 	}
-	return tok
+
+	idTokenRaw, ok := tok.Extra("id_token").(string)
+	if !ok {
+		return types.UserInfo{}, fmt.Errorf("Malformed token")
+	}
+
+	info, err := extractUserInfoFromIDToken(idTokenRaw)
+	if err != nil {
+		return types.UserInfo{}, fmt.Errorf("Failed to parse id_token: " + err.Error())
+	}
+
+	if err = db.SaveToken(info, tok); err != nil {
+		return types.UserInfo{}, fmt.Errorf("Failed to save token: " + err.Error())
+	}
+
+	return info, nil
 }
 
-// Retrieves a token from a local file.
-func tokenFromFile(file string) (*oauth2.Token, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	tok := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(tok)
-	return tok, err
-}
+// takes JWT and parses payload for google sub and email
+func extractUserInfoFromIDToken(idToken string) (types.UserInfo, error) {
+	var claims types.UserInfo
 
-// Saves a token to a file path.
-func saveToken(path string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		log.Printf("Unable to cache oauth token: %v", err)
+	parts := strings.Split(idToken, ".")
+	if len(parts) != 3 {
+		return claims, fmt.Errorf("Malformed ID token")
 	}
-	defer f.Close()
-	json.NewEncoder(f).Encode(token)
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return claims, err
+	}
+
+	if err = json.Unmarshal(payload, &claims); err != nil {
+		return claims, err
+	}
+
+	return claims, nil
 }
