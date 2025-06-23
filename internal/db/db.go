@@ -60,6 +60,8 @@ func CreateUser(id, email string) error {
 	return nil
 }
 
+func GetUserToken(userID string) (string, error)
+
 func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
 	stmt, err := db.Prepare("INSERT INTO auth (user_id, token) VALUES (?, ?);")
 	if err != nil {
@@ -93,24 +95,24 @@ func encryptToken(token *oauth2.Token) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func decryptToken(encryptedToken string) (oauth2.Token, error) {
+func DecryptToken(encryptedToken string) (*oauth2.Token, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedToken)
 	if err != nil {
-		return oauth2.Token{}, err
+		return nil, err
 	}
 
 	tokBlob, err := decrypt(ciphertext, []byte(os.Getenv("OAUTH_TOKEN_CIPHER_KEY")))
 	if err != nil {
-		return oauth2.Token{}, err
+		return nil, err
 	}
 
 	var tok oauth2.Token
 	err = json.Unmarshal(tokBlob, &tok)
 	if err != nil {
-		return oauth2.Token{}, err
+		return nil, err
 	}
 
-	return tok, nil
+	return &tok, nil
 }
 
 func encrypt(plaintext, key []byte) ([]byte, error) {

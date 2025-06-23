@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -21,16 +22,20 @@ type UserInfo struct {
 	Email string `json:"email"`
 }
 
-func GetClient() *http.Client {
-	// config := getSecretConfig()
-	//
-	// tokFile := "token.json"
-	// tok, err := tokenFromFile(tokFile)
-	// if err != nil {
-	// 	tok = getTokenFromWeb(config)
-	// 	saveToken(tokFile, tok)
-	// }
-	// return config.Client(context.Background(), tok)
+func GetClient(userID string) (*http.Client, error) {
+	config := getSecretConfig()
+
+	encTokString, err := db.GetUserToken(userID)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to fetch user authentication token:\n" + err.Error())
+	}
+
+	tok, err := db.DecryptToken(encTokString)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to decrypt token:\n", err.Error())
+	}
+
+	return config.Client(context.Background(), tok), nil
 }
 
 func GetAuthURL() string {

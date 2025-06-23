@@ -15,8 +15,8 @@ func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func GetCalendarID(ctx context.Context, name string) (string, error) {
-	srv, err := getService(ctx)
+func GetCalendarID(ctx context.Context, userID, name string) (string, error) {
+	srv, err := getService(ctx, userID)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return "", err
@@ -37,8 +37,8 @@ func GetCalendarID(ctx context.Context, name string) (string, error) {
 	return "primary", nil
 }
 
-func CreateEvent(ctx context.Context, calendarID string, summary, description, start, end, timezone string) (*calendar.Event, error) {
-	srv, err := getService(ctx)
+func CreateEvent(ctx context.Context, userID, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
+	srv, err := getService(ctx, userID)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return &calendar.Event{}, err
@@ -80,10 +80,10 @@ func CreateEvent(ctx context.Context, calendarID string, summary, description, s
 	return ev, nil
 }
 
-func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error) {
+func GetEvents(ctx context.Context, userID, calendarID string) ([]*calendar.Event, error) {
 	list := make([]*calendar.Event, 0)
 
-	srv, err := getService(ctx)
+	srv, err := getService(ctx, userID)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
@@ -102,8 +102,11 @@ func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error
 	return list, nil
 }
 
-func getService(ctx context.Context) (*calendar.Service, error) {
-	client := auth.GetClient()
+func getService(ctx context.Context, userID string) (*calendar.Service, error) {
+	client, err := auth.GetClient(userID)
+	if err != nil {
+		return nil, err
+	}
 
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	return srv, err

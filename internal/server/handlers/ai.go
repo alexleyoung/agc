@@ -20,6 +20,19 @@ func setupAI(mux *http.ServeMux) {
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		return
+	}
+	userID := authHeader[len(bearerPrefix):]
+
 	var body chatRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Printf("Error parsing body: %s", err.Error())
@@ -42,7 +55,7 @@ func chat(w http.ResponseWriter, r *http.Request) {
 		history = make([]*genai.Content, 0)
 	}
 
-	res, err := ai.Chat(r.Context(), model, history, prompt)
+	res, err := ai.Chat(r.Context(), userID, model, history, prompt)
 	if err != nil {
 		log.Printf("error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

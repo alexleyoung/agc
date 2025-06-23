@@ -42,7 +42,7 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	},
 }
 
-func Chat(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
+func Chat(ctx context.Context, userID string, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  os.Getenv("GEMINI_API_KEY"),
 		Backend: genai.BackendGeminiAPI,
@@ -85,7 +85,7 @@ func Chat(ctx context.Context, model string, history []*genai.Content, prompt st
 			}
 			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, args)
 
-			out, err := executeFunctionCall(ctx, fn.Name, args)
+			out, err := executeFunctionCall(ctx, userID, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
 				return &genai.GenerateContentResponse{}, err
@@ -103,7 +103,7 @@ func Chat(ctx context.Context, model string, history []*genai.Content, prompt st
 	return &genai.GenerateContentResponse{}, fmt.Errorf("Max steps reached without resolution")
 }
 
-func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
+func executeFunctionCall(ctx context.Context, userID string, name string, argsJSON []byte) (string, error) {
 	switch name {
 	case "create_event":
 		var args struct {
@@ -119,7 +119,7 @@ func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (str
 			return "", fmt.Errorf("failed to decode args into struct: %w", err)
 		}
 
-		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End, args.Timezone)
+		ev, err := calendar.CreateEvent(ctx, userID, args.CalendarID, args.Summary, args.Description, args.Start, args.End, args.Timezone)
 		if err != nil {
 			return "", err
 		}
