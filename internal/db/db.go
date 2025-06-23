@@ -60,7 +60,21 @@ func CreateUser(id, email string) error {
 	return nil
 }
 
-func GetUserToken(userID string) (string, error)
+func GetUserToken(userID string) (string, error) {
+	stmt, err := db.Prepare("SELECT token FROM auth WHERE user_id = ?;")
+	if err != nil {
+		return "", err
+	}
+	defer stmt.Close()
+
+	var token string
+	err = stmt.QueryRow(userID).Scan(&token)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
 
 func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
 	stmt, err := db.Prepare("INSERT INTO auth (user_id, token) VALUES (?, ?);")
@@ -69,7 +83,7 @@ func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
 	}
 	defer stmt.Close()
 
-	encToken, err := encryptToken(token)
+	encToken, err := EncryptToken(token)
 	if err != nil {
 		return err
 	}
@@ -81,13 +95,20 @@ func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
 	return nil
 }
 
-func encryptToken(token *oauth2.Token) (string, error) {
+// encrypts the token using AES-256 GCM; returns b64 encoding of ciphertext
+func EncryptToken(token *oauth2.Token) (string, error) {
 	data, err := json.Marshal(token)
 	if err != nil {
 		return "", nil
 	}
 
-	ciphertext, err := encrypt(data, []byte(os.Getenv("OAUTH_TOKEN_CIPHER_KEY")))
+	b64Key := os.Getenv("OAUTH_TOKEN_B64_CIPHER_KEY")
+	key, err := base64.StdEncoding.DecodeString(b64Key)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext, err := encrypt(data, key)
 	if err != nil {
 		return "", err
 	}
@@ -95,13 +116,19 @@ func encryptToken(token *oauth2.Token) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
+// decrypts the token using AES-256 GCM; returns oauth2.Token
 func DecryptToken(encryptedToken string) (*oauth2.Token, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedToken)
 	if err != nil {
 		return nil, err
 	}
 
-	tokBlob, err := decrypt(ciphertext, []byte(os.Getenv("OAUTH_TOKEN_CIPHER_KEY")))
+	b64Key := os.Getenv("OAUTH_TOKEN_B64_CIPHER_KEY")
+	key, err := base64.StdEncoding.DecodeString(b64Key)
+	if err != nil {
+		return nil, err
+	}
+	tokBlob, err := decrypt(ciphertext, key)
 	if err != nil {
 		return nil, err
 	}
