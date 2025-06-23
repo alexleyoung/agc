@@ -10,16 +10,9 @@ import (
 	"google.golang.org/api/option"
 )
 
-// Get the current timestamp with the calendar's timezone
+// Get the current UTC timestamp as string
 func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
-}
-
-func getService(ctx context.Context) (*calendar.Service, error) {
-	client := auth.GetClient()
-
-	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
-	return srv, err
 }
 
 func GetCalendarID(ctx context.Context, name string) (string, error) {
@@ -107,4 +100,11 @@ func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error
 	list = events.Items
 
 	return list, nil
+}
+
+func getService(ctx context.Context) (*calendar.Service, error) {
+	client := auth.GetClient()
+
+	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
+	return srv, err
 }

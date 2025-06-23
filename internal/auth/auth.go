@@ -23,22 +23,14 @@ type UserInfo struct {
 
 func GetClient() *http.Client {
 	// config := getSecretConfig()
-	return nil
-}
-
-func getSecretConfig() *oauth2.Config {
-	b, err := os.ReadFile("credentials.json")
-
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarReadonlyScope, calendar.CalendarEventsScope, "openid", "email")
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	return config
+	//
+	// tokFile := "token.json"
+	// tok, err := tokenFromFile(tokFile)
+	// if err != nil {
+	// 	tok = getTokenFromWeb(config)
+	// 	saveToken(tokFile, tok)
+	// }
+	// return config.Client(context.Background(), tok)
 }
 
 func GetAuthURL() string {
@@ -69,6 +61,21 @@ func Authenticate(r *http.Request) (types.UserInfo, error) {
 	}
 
 	return info, nil
+}
+
+func getSecretConfig() *oauth2.Config {
+	b, err := os.ReadFile("credentials.json")
+
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(b, calendar.CalendarReadonlyScope, calendar.CalendarEventsScope, "openid", "email")
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	return config
 }
 
 // takes JWT and parses payload for google sub and email
