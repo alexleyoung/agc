@@ -31,6 +31,8 @@ func chat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
 		return
 	}
+	// EVENTUALLY THIS WILL NEED TO BE CHANGED
+	// WILL BE JWT INSTEAD OF ID
 	userID := authHeader[len(bearerPrefix):]
 
 	var body chatRequestBody
