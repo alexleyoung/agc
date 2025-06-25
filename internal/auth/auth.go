@@ -130,5 +130,4 @@ func VerifyAuthHeader(r *http.Request) (types.UserInfo, error) {
 	}
 
 	return claims, nil
-
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/alexleyoung/auto-gcal/internal/ai"
+	"github.com/alexleyoung/auto-gcal/internal/auth"
 	"google.golang.org/genai"
 )
 
@@ -20,20 +21,13 @@ func setupAI(mux *http.ServeMux) {
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+	userInfo, err := auth.VerifyAuthHeader(r)
+	if err != nil {
+		log.Printf("Error verifying auth header: %s", err.Error())
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-
-	const bearerPrefix = "Bearer "
-	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
-		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-		return
-	}
-	// EVENTUALLY THIS WILL NEED TO BE CHANGED
-	// WILL BE JWT INSTEAD OF ID
-	userID := authHeader[len(bearerPrefix):]
+	userID := userInfo.Sub
 
 	var body chatRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
