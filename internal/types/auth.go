@@ -1,9 +1,11 @@
 package types
 
 type User struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Name   string `json:"name"`
+	UserID    string `json:"user_id"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	Timezone  string `json:"timezone"`
+	CreatedAt string `json:"created_at"`
 }
 
 type IDToken struct {

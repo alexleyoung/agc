@@ -37,12 +37,7 @@ func Init() {
 	config = cfg
 }
 
-func GetClient(sessionID string) (*http.Client, error) {
-	session, err := db.GetSession(sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to fetch user session:\n" + err.Error())
-	}
-
+func GetClient(session types.Session) (*http.Client, error) {
 	time, err := time.Parse(time.RFC3339, session.ExpiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse session expiration time:\n" + err.Error())

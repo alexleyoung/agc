@@ -24,12 +24,13 @@ func Init() {
         user_id TEXT NOT NULL PRIMARY KEY,
 		email TEXT NOT NULL,
 		name TEXT NOT NULL,
+		timezone TEXT,
 		created_at TEXT DEFAULT (datetime('now'))
     );
 	`
 	createSessions := `
     CREATE TABLE IF NOT EXISTS sessions (
-		session_id TEXT NOT NULL PRIMARY KEY,
+		id TEXT NOT NULL PRIMARY KEY,
 		user_id TEXT NOT NULL,
 		access_token TEXT,
 		refresh_token TEXT,
@@ -71,7 +72,7 @@ func CreateUser(id, email, name string) (types.User, error) {
 		return user, nil
 	}
 
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO users (user_id, email, name) VALUES (?, ?, ?)")
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
 	defer stmt.Close()
 
 	_, err = stmt.Exec(id, email, name)
@@ -101,7 +102,7 @@ func UpdateUser(id, email, name string) (types.User, error) {
 }
 
 func GetSession(sessionID string) (types.Session, error) {
-	stmt, err := db.Prepare("SELECT * FROM sessions WHERE session_id = ?")
+	stmt, err := db.Prepare("SELECT * FROM sessions WHERE id = ?")
 	if err != nil {
 		return types.Session{}, err
 	}
@@ -118,7 +119,7 @@ func GetSession(sessionID string) (types.Session, error) {
 }
 
 func CreateSession(userID, accessToken, refreshToken string, expiresAt time.Time) (types.Session, error) {
-	stmt, err := db.Prepare("INSERT INTO sessions (session_id, user_id, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO sessions (id, user_id, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return types.Session{}, err
 	}
@@ -137,7 +138,7 @@ func CreateSession(userID, accessToken, refreshToken string, expiresAt time.Time
 }
 
 func UpdateSessionTokens(sessionID, accessToken string, expiresAt time.Time) error {
-	stmt, err := db.Prepare("UPDATE sessions SET access_token = ?, expires_at = ? WHERE session_id = ?")
+	stmt, err := db.Prepare("UPDATE sessions SET access_token = ?, expires_at = ? WHERE id = ?")
 	if err != nil {
 		return err
 	}
