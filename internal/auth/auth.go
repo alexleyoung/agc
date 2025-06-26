@@ -68,6 +68,34 @@ func Authenticate(r *http.Request) (types.UserInfo, error) {
 	return info, nil
 }
 
+func VerifyAuthHeader(r *http.Request) (types.UserInfo, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return types.UserInfo{}, fmt.Errorf("Missing authorization header")
+	}
+
+	const bearerPrefix = "Bearer "
+	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+		return types.UserInfo{}, fmt.Errorf("Invalid authorization header")
+	}
+
+	// takes JWT and parses payload for google sub and email
+	parts := strings.Split(authHeader, ".")
+	if len(parts) != 3 {
+		return types.UserInfo{}, fmt.Errorf("Malformed authorization header")
+	}
+	payload, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return types.UserInfo{}, err
+	}
+	var claims types.UserInfo
+	if err = json.Unmarshal(payload, &claims); err != nil {
+		return types.UserInfo{}, err
+	}
+
+	return claims, nil
+}
+
 func getSecretConfig() *oauth2.Config {
 	b, err := os.ReadFile("credentials.json")
 
@@ -99,34 +127,6 @@ func extractUserInfoFromIDToken(idToken string) (types.UserInfo, error) {
 
 	if err = json.Unmarshal(payload, &claims); err != nil {
 		return claims, err
-	}
-
-	return claims, nil
-}
-
-func VerifyAuthHeader(r *http.Request) (types.UserInfo, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return types.UserInfo{}, fmt.Errorf("Missing authorization header")
-	}
-
-	const bearerPrefix = "Bearer "
-	if len(authHeader) <= len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
-		return types.UserInfo{}, fmt.Errorf("Invalid authorization header")
-	}
-
-	// takes JWT and parses payload for google sub and email
-	parts := strings.Split(authHeader, ".")
-	if len(parts) != 3 {
-		return types.UserInfo{}, fmt.Errorf("Malformed authorization header")
-	}
-	payload, err := base64.StdEncoding.DecodeString(parts[1])
-	if err != nil {
-		return types.UserInfo{}, err
-	}
-	var claims types.UserInfo
-	if err = json.Unmarshal(payload, &claims); err != nil {
-		return types.UserInfo{}, err
 	}
 
 	return claims, nil

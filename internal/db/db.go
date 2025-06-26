@@ -77,7 +77,8 @@ func GetUserToken(userID string) (string, error) {
 }
 
 func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
-	stmt, err := db.Prepare("INSERT INTO auth (user_id, token) VALUES (?, ?);")
+	// TODO: fix to replace if token already exists
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO auth (user_id, token) VALUES (?, ?);")
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,8 @@ func EncryptToken(token *oauth2.Token) (string, error) {
 		return "", nil
 	}
 
-	b64Key := os.Getenv("OAUTH_TOKEN_B64_CIPHER_KEY")
+	b64Key := os.Getenv("OAUTH_TOKEN_CIPHER_KEY_B64")
+	log.Print(b64Key)
 	key, err := base64.StdEncoding.DecodeString(b64Key)
 	if err != nil {
 		return "", err
