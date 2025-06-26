@@ -65,13 +65,32 @@ func GetUser(userID string) (types.User, error) {
 }
 
 func CreateUser(id, email, name string) (types.User, error) {
+	user, err := GetUser(id)
+	if err == nil {
+		UpdateUser(id, email, name)
+		return user, nil
+	}
+
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO users (user_id, email, name) VALUES (?, ?, ?)")
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id, email, name)
+	if err != nil {
+		return types.User{}, err
+	}
+
+	user = types.User{UserID: id, Email: email, Name: name}
+	return user, nil
+}
+
+func UpdateUser(id, email, name string) (types.User, error) {
+	stmt, err := db.Prepare("UPDATE users SET email = ?, name = ? WHERE user_id = ?")
 	if err != nil {
 		return types.User{}, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, email, name)
+	_, err = stmt.Exec(email, name, id)
 	if err != nil {
 		return types.User{}, err
 	}
@@ -115,4 +134,15 @@ func CreateSession(userID, accessToken, refreshToken string, expiresAt time.Time
 	session := types.Session{ID: sessionID, UserID: userID, AccessToken: accessToken, RefreshToken: refreshToken, ExpiresAt: expiresAt.Format(time.RFC3339)}
 
 	return session, nil
+}
+
+func UpdateSessionTokens(sessionID, accessToken string, expiresAt time.Time) error {
+	stmt, err := db.Prepare("UPDATE sessions SET access_token = ?, expires_at = ? WHERE session_id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(accessToken, expiresAt.Format(time.RFC3339), sessionID)
+	return err
 }

@@ -6,8 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alexleyoung/auto-gcal/internal/auth"
 	"github.com/alexleyoung/auto-gcal/internal/db"
 )
+
+type contextKey string
+
+const userKey contextKey = "user"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -32,12 +37,20 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if err != nil || expiresAt.Before(time.Now()) {
+		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", session.UserID)
+		if expiresAt.Before(time.Now()) {
+			newToken, err := auth.refreshToken(session)
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		ctx := context.WithValue(r.Context(), userKey, session.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

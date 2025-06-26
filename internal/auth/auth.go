@@ -86,6 +86,35 @@ func Authenticate(r *http.Request) (types.User, types.Session, error) {
 	return user, session, nil
 }
 
+func refreshToken(session types.Session) (*oauth2.Token, error) {
+	expiry, err := time.Parse(time.RFC3339, session.ExpiresAt)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse session expiration time:\n" + err.Error())
+	}
+
+	tok := &oauth2.Token{
+		AccessToken:  session.AccessToken,
+		RefreshToken: session.RefreshToken,
+		Expiry:       expiry,
+		TokenType:    "Bearer",
+	}
+
+	ts := config.TokenSource(context.Background(), tok)
+	newToken, err := ts.Token()
+	if err != nil {
+		return nil, fmt.Errorf("token refresh failed: %w", err)
+	}
+
+	if newToken.AccessToken != session.AccessToken || newToken.Expiry != expiry {
+		err = db.UpdateSessionTokens(session.ID, newToken.AccessToken, newToken.Expiry)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update session: %w", err)
+		}
+	}
+
+	return newToken, nil
+}
+
 // takes JWT and parses payload for google sub and email
 func parseIDToken(idToken string) (types.IDToken, error) {
 	var claims types.IDToken
