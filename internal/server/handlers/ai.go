@@ -16,7 +16,7 @@ type chatRequestBody struct {
 }
 
 func setupAI(mux *http.ServeMux) {
-	mux.HandleFunc("GET /chat", chat)
+	mux.HandleFunc("GET /chat", http.HandlerFunc(chat))
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {

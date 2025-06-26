@@ -30,24 +30,20 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		expiresAt, err := time.Parse(time.RFC3339, session.ExpiresAt)
-
 		if err != nil {
 			log.Print("Error parsing session expiration time:", err)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
 		if expiresAt.Before(time.Now()) {
-			newToken, err := auth.refreshToken(session)
+			newToken, err := auth.RefreshToken(session)
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
+			session.AccessToken = newToken.AccessToken
+			session.ExpiresAt = newToken.Expiry.Format(time.RFC3339)
 		}
 
 		ctx := context.WithValue(r.Context(), userKey, session.UserID)

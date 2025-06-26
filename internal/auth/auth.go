@@ -86,7 +86,7 @@ func Authenticate(r *http.Request) (types.User, types.Session, error) {
 	return user, session, nil
 }
 
-func refreshToken(session types.Session) (*oauth2.Token, error) {
+func RefreshToken(session types.Session) (*oauth2.Token, error) {
 	expiry, err := time.Parse(time.RFC3339, session.ExpiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse session expiration time:\n" + err.Error())
