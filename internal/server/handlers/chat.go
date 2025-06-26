@@ -10,12 +10,6 @@ import (
 	"google.golang.org/genai"
 )
 
-type chatRequestBody struct {
-	Prompt  string           `json:"prompt"`
-	Model   string           `json:"model,omitempty"`
-	History []*genai.Content `json:"history,omitempty"`
-}
-
 func setupAI(mux *http.ServeMux) {
 	mux.Handle("GET /chat", AuthMiddleware(http.HandlerFunc(chat)))
 }
@@ -27,7 +21,7 @@ func chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body chatRequestBody
+	var body types.ChatRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Printf("Error parsing body: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
