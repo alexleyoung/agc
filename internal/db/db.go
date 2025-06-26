@@ -110,7 +110,6 @@ func EncryptToken(token *oauth2.Token) (string, error) {
 	}
 
 	b64Key := os.Getenv("OAUTH_TOKEN_CIPHER_KEY_B64")
-	log.Print(b64Key)
 	key, err := base64.StdEncoding.DecodeString(b64Key)
 	if err != nil {
 		return "", err

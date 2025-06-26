@@ -17,14 +17,30 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
+var config *oauth2.Config
+
 type UserInfo struct {
 	Sub   string `json:"sub"`
 	Email string `json:"email"`
 }
 
-func GetClient(userID string) (*http.Client, error) {
-	config := getSecretConfig()
+func Init() {
+	b, err := os.ReadFile("credentials.json")
 
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	cfg, err := google.ConfigFromJSON(b, calendar.CalendarReadonlyScope, calendar.CalendarEventsScope, "openid", "email")
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+
+	config = cfg
+}
+
+func GetClient(userID string) (*http.Client, error) {
 	encTokString, err := db.GetUserToken(userID)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to fetch user authentication token:\n" + err.Error())
@@ -39,13 +55,10 @@ func GetClient(userID string) (*http.Client, error) {
 }
 
 func GetAuthURL() string {
-	config := getSecretConfig()
 	return config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 }
 
 func Authenticate(r *http.Request) (types.UserInfo, error) {
-	config := getSecretConfig()
-
 	tok, err := config.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		return types.UserInfo{}, err
@@ -94,21 +107,6 @@ func VerifyAuthHeader(r *http.Request) (types.UserInfo, error) {
 	}
 
 	return claims, nil
-}
-
-func getSecretConfig() *oauth2.Config {
-	b, err := os.ReadFile("credentials.json")
-
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, calendar.CalendarReadonlyScope, calendar.CalendarEventsScope, "openid", "email")
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	return config
 }
 
 // takes JWT and parses payload for google sub and email
