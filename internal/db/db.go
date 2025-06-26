@@ -77,7 +77,6 @@ func GetUserToken(userID string) (string, error) {
 }
 
 func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
-	// TODO: fix to replace if token already exists
 	stmt, err := db.Prepare("INSERT OR REPLACE INTO auth (user_id, token) VALUES (?, ?);")
 	if err != nil {
 		return err
