@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/alexleyoung/auto-gcal/internal/ai"
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	"google.golang.org/genai"
 )
 
@@ -20,20 +21,18 @@ func setupAI(mux *http.ServeMux) {
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {
+	session, ok := r.Context().Value(sessionKey).(types.Session)
+	if !ok {
+		http.Error(w, "Session missing in context", http.StatusInternalServerError)
+		return
+	}
+
 	var body chatRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Printf("Error parsing body: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	session, err := r.Cookie("agc_session")
-	if err != nil {
-		log.Print("Error getting session cookie:", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	userID := session.Value
 
 	// SCUFFED FOR SIMPLE TESTING - SETUP ARGS
 	prompt := r.URL.Query().Get("prompt")
@@ -50,7 +49,7 @@ func chat(w http.ResponseWriter, r *http.Request) {
 		history = make([]*genai.Content, 0)
 	}
 
-	res, err := ai.Chat(r.Context(), userID, model, history, prompt)
+	res, err := ai.Chat(r.Context(), session.UserID, model, history, prompt)
 	if err != nil {
 		log.Printf("error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

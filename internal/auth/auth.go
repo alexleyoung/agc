@@ -33,6 +33,7 @@ func Init() {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 
+	log.Print("Initialized OAuth2 client")
 	config = cfg
 }
 
@@ -60,26 +61,31 @@ func Authenticate(r *http.Request) (types.User, types.Session, error) {
 	// exchange code
 	tok, err := config.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
+		log.Print("Error exchanging code:", err)
 		return types.User{}, types.Session{}, err
 	}
 
 	// get id_token
 	idTokenRaw, ok := tok.Extra("id_token").(string)
 	if !ok {
+		log.Print("Malformed token")
 		return types.User{}, types.Session{}, fmt.Errorf("Malformed token")
 	}
 	idToken, err := parseIDToken(idTokenRaw)
 	if err != nil {
+		log.Print("Failed to parse id_token:", err)
 		return types.User{}, types.Session{}, fmt.Errorf("Failed to parse id_token: " + err.Error())
 	}
 
 	// create user and session as necessary
 	user, err := db.CreateUser(idToken.Sub, idToken.Email, idToken.Name)
 	if err != nil {
+		log.Print("Failed to create user:", err)
 		return types.User{}, types.Session{}, fmt.Errorf("Failed to create user:\n" + err.Error())
 	}
 	session, err := db.CreateSession(idToken.Sub, tok.AccessToken, tok.RefreshToken, tok.Expiry)
 	if err != nil {
+		log.Print("Failed to create session:", err)
 		return types.User{}, types.Session{}, fmt.Errorf("Failed to create session:\n" + err.Error())
 	}
 

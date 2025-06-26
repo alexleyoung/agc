@@ -12,7 +12,7 @@ import (
 
 type contextKey string
 
-const userKey contextKey = "user"
+const sessionKey contextKey = "session"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			session.ExpiresAt = newToken.Expiry.Format(time.RFC3339)
 		}
 
-		ctx := context.WithValue(r.Context(), userKey, session.UserID)
+		ctx := context.WithValue(r.Context(), sessionKey, session)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
