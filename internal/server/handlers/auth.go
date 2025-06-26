@@ -17,11 +17,19 @@ func getAuthURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
-	info, err := auth.Authenticate(r)
+	user, session, err := auth.Authenticate(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "agc_session",
+		Value:    session.ID,
+		HttpOnly: true,
+		Secure:   false, // TEMP: CHANGE TO TRUE FOR PROD!!!!
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
 
-	w.Write([]byte("Authenticated as user: " + info.Email))
+	w.Write([]byte("Authenticated as user: " + user.Email))
 }

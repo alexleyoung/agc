@@ -1,20 +1,13 @@
 package db
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
-	"encoding/json"
-	"errors"
-	"io"
 	"log"
-	"os"
+	"time"
 
 	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
-	"golang.org/x/oauth2"
 )
 
 var db *sql.DB
@@ -29,7 +22,9 @@ func Init() {
 	createUsers := `
     CREATE TABLE IF NOT EXISTS users (
         user_id TEXT NOT NULL PRIMARY KEY,
-		email TEXT NOT NULL
+		email TEXT NOT NULL,
+		name TEXT NOT NULL,
+		created_at TEXT DEFAULT (datetime('now'))
     );
 	`
 	createSessions := `
@@ -38,7 +33,7 @@ func Init() {
 		user_id TEXT NOT NULL,
 		access_token TEXT,
 		refresh_token TEXT,
-		expires_at TIMESTAMP,
+		expires_at TEXT,
 		FOREIGN KEY(user_id) REFERENCES users(user_id)
     );
     `
@@ -52,154 +47,72 @@ func Init() {
 	log.Println("DB initialized successfully")
 }
 
-func CreateUser(id, email string) error {
-	stmt, err := db.Prepare("INSERT INTO users (user_id, email) VALUES (?, ?)")
+func GetUser(userID string) (types.User, error) {
+	stmt, err := db.Prepare("SELECT * FROM users WHERE user_id = ?")
 	if err != nil {
-		return err
+		return types.User{}, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, email)
+	row := stmt.QueryRow(userID)
+	var user types.User
+	err = row.Scan(&user.UserID, &user.Email, &user.Name)
 	if err != nil {
-		return err
+		return types.User{}, err
 	}
 
-	return nil
+	return user, nil
 }
 
-func GetUserToken(userID string) (string, error) {
-	stmt, err := db.Prepare("SELECT token FROM auth WHERE user_id = ?;")
+func CreateUser(id, email, name string) (types.User, error) {
+	stmt, err := db.Prepare("INSERT OR REPLACE INTO users (user_id, email, name) VALUES (?, ?, ?)")
 	if err != nil {
-		return "", err
+		return types.User{}, err
 	}
 	defer stmt.Close()
 
-	var token string
-	err = stmt.QueryRow(userID).Scan(&token)
+	_, err = stmt.Exec(id, email, name)
 	if err != nil {
-		return "", err
+		return types.User{}, err
 	}
 
-	return token, nil
+	user := types.User{UserID: id, Email: email, Name: name}
+
+	return user, nil
 }
 
-func SaveToken(userInfo types.UserInfo, token *oauth2.Token) error {
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO auth (user_id, token) VALUES (?, ?);")
+func GetSession(sessionID string) (types.Session, error) {
+	stmt, err := db.Prepare("SELECT * FROM sessions WHERE session_id = ?")
 	if err != nil {
-		return err
+		return types.Session{}, err
 	}
 	defer stmt.Close()
 
-	encToken, err := EncryptToken(token)
+	row := stmt.QueryRow(sessionID)
+	var session types.Session
+	err = row.Scan(&session.ID, &session.UserID, &session.AccessToken, &session.RefreshToken, &session.ExpiresAt)
 	if err != nil {
-		return err
+		return types.Session{}, err
 	}
 
-	_, err = stmt.Exec(userInfo.Sub, encToken)
-	if err != nil {
-		return err
-	}
-	return nil
+	return session, nil
 }
 
-// encrypts the token using AES-256 GCM; returns b64 encoding of ciphertext
-func EncryptToken(token *oauth2.Token) (string, error) {
-	data, err := json.Marshal(token)
+func CreateSession(userID, accessToken, refreshToken string, expiresAt time.Time) (types.Session, error) {
+	stmt, err := db.Prepare("INSERT INTO sessions (session_id, user_id, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
-		return "", nil
+		return types.Session{}, err
 	}
+	defer stmt.Close()
 
-	b64Key := os.Getenv("OAUTH_TOKEN_CIPHER_KEY_B64")
-	key, err := base64.StdEncoding.DecodeString(b64Key)
+	// create random session ID
+	sessionID := uuid.NewString()
+
+	_, err = stmt.Exec(sessionID, userID, accessToken, refreshToken, expiresAt.Format(time.RFC3339))
 	if err != nil {
-		return "", err
+		return types.Session{}, err
 	}
+	session := types.Session{ID: sessionID, UserID: userID, AccessToken: accessToken, RefreshToken: refreshToken, ExpiresAt: expiresAt.Format(time.RFC3339)}
 
-	ciphertext, err := encrypt(data, key)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
-}
-
-// decrypts the token using AES-256 GCM; returns oauth2.Token
-func DecryptToken(encryptedToken string) (*oauth2.Token, error) {
-	ciphertext, err := base64.StdEncoding.DecodeString(encryptedToken)
-	if err != nil {
-		return nil, err
-	}
-
-	b64Key := os.Getenv("OAUTH_TOKEN_B64_CIPHER_KEY")
-	key, err := base64.StdEncoding.DecodeString(b64Key)
-	if err != nil {
-		return nil, err
-	}
-	tokBlob, err := decrypt(ciphertext, key)
-	if err != nil {
-		return nil, err
-	}
-
-	var tok oauth2.Token
-	err = json.Unmarshal(tokBlob, &tok)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tok, nil
-}
-
-func encrypt(plaintext, key []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("Key must be 32 bytes for AES-256")
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce := make([]byte, aesGCM.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
-	}
-
-	ciphertext := aesGCM.Seal(nonce, nonce, plaintext, nil)
-	return ciphertext, nil
-}
-
-func decrypt(ciphertext, key []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("Key must be 32 bytes for AES-256")
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	nonceSize := aesGCM.NonceSize()
-	if len(ciphertext) < nonceSize {
-		return nil, errors.New("ciphertext too short")
-	}
-
-	nonce := ciphertext[:nonceSize]
-	ciphertextData := ciphertext[nonceSize:]
-
-	plaintext, err := aesGCM.Open(nil, nonce, ciphertextData, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return plaintext, nil
+	return session, nil
 }
