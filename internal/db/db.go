@@ -26,17 +26,24 @@ func Init() {
 		log.Fatal(err)
 	}
 
-	createTables := `
+	createUsers := `
     CREATE TABLE IF NOT EXISTS users (
         user_id TEXT NOT NULL PRIMARY KEY,
 		email TEXT NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS auth (
-        user_id INTEGER NOT NULL PRIMARY KEY,
-		token TEXT,
+	`
+	createSessions := `
+    CREATE TABLE IF NOT EXISTS sessions (
+		session_id TEXT NOT NULL PRIMARY KEY,
+		user_id TEXT NOT NULL,
+		access_token TEXT,
+		refresh_token TEXT,
+		expires_at TIMESTAMP,
 		FOREIGN KEY(user_id) REFERENCES users(user_id)
     );
     `
+
+	createTables := createUsers + createSessions
 
 	_, err = db.Exec(createTables)
 	if err != nil {
