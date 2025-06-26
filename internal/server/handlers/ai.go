@@ -17,7 +17,7 @@ type chatRequestBody struct {
 }
 
 func setupAI(mux *http.ServeMux) {
-	mux.HandleFunc("GET /chat", http.HandlerFunc(chat))
+	mux.Handle("GET /chat", AuthMiddleware(http.HandlerFunc(chat)))
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {
