@@ -15,8 +15,8 @@ func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func GetCalendarID(ctx context.Context, userID, name string) (string, error) {
-	srv, err := getService(ctx, userID)
+func GetCalendarID(ctx context.Context, session types.Session, name string) (string, error) {
+	srv, err := getService(ctx, session)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return "", err
@@ -37,8 +37,8 @@ func GetCalendarID(ctx context.Context, userID, name string) (string, error) {
 	return "primary", nil
 }
 
-func getService(ctx context.Context, userID string) (*calendar.Service, error) {
-	client, err := auth.GetClient(userID)
+func getService(ctx context.Context, session types.Session) (*calendar.Service, error) {
+	client, err := auth.GetClient(session)
 	if err != nil {
 		return nil, err
 	}
