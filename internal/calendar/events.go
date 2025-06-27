@@ -4,12 +4,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	"golang.org/x/net/context"
 	"google.golang.org/api/calendar/v3"
 )
 
-func CreateEvent(ctx context.Context, userID, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
-	srv, err := getService(ctx, userID)
+func CreateEvent(ctx context.Context, session types.Session, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
+	srv, err := getService(ctx, session)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return &calendar.Event{}, err
@@ -51,10 +52,10 @@ func CreateEvent(ctx context.Context, userID, calendarID, summary, description, 
 	return ev, nil
 }
 
-func GetEvents(ctx context.Context, userID, calendarID string) ([]*calendar.Event, error) {
+func GetEvents(ctx context.Context, session types.Session, calendarID string) ([]*calendar.Event, error) {
 	list := make([]*calendar.Event, 0)
 
-	srv, err := getService(ctx, userID)
+	srv, err := getService(ctx, session)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
