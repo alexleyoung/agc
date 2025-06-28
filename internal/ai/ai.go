@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/alexleyoung/auto-gcal/internal/calendar"
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	"google.golang.org/genai"
 )
 

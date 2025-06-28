@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/alexleyoung/auto-gcal/internal/auth"
+	"github.com/alexleyoung/auto-gcal/internal/types"
 	"golang.org/x/net/context"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -15,26 +16,20 @@ func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-func GetCalendarID(ctx context.Context, session types.Session, name string) (string, error) {
+func GetCalendar(ctx context.Context, session types.Session, calendar string) (*calendar.Calendar, error) {
 	srv, err := getService(ctx, session)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
-		return "", err
+		return nil, err
 	}
 
-	list, err := srv.CalendarList.List().Do()
-	for _, cal := range list.Items {
-		if cal.Summary == name {
-			cal, err := srv.Calendars.Get(cal.Id).Do()
-			if err != nil {
-				log.Printf("Failed to retrieve calendar %s: %v", cal.Summary, err)
-				return "", err
-			}
-			return cal.Id, nil
-		}
+	cal, err := srv.Calendars.Get(calendar).Do()
+	if err != nil {
+		log.Printf("Unable to retrieve calendar: %v", err)
+		return nil, err
 	}
 
-	return "primary", nil
+	return cal, nil
 }
 
 func getService(ctx context.Context, session types.Session) (*calendar.Service, error) {

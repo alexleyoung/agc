@@ -72,7 +72,7 @@ func CreateUser(id, email, name string) (types.User, error) {
 		return user, nil
 	}
 
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
 	defer stmt.Close()
 
 	_, err = stmt.Exec(id, email, name)
