@@ -1,3 +1,3 @@
 # auto-gcal
 
-automatically generate google tasks and events with natural langauge
+http server for interacting with google calendar with natural langauge. yippee!
