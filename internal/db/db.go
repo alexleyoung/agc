@@ -66,18 +66,18 @@ func GetUser(userID string) (types.User, error) {
 }
 
 func CreateUser(id, email, name, timezone string) (types.User, error) {
-	stmt, err := db.Prepare("INSERT INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO users (user_id, email, name, timezone) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return types.User{}, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, email, name)
+	_, err = stmt.Exec(id, email, name, timezone)
 	if err != nil {
 		return types.User{}, err
 	}
 
-	user := types.User{UserID: id, Email: email, Name: name}
+	user := types.User{UserID: id, Email: email, Name: name, Timezone: timezone}
 	return user, nil
 }
 

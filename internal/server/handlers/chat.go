@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -11,6 +12,18 @@ import (
 
 func setupAI(mux *http.ServeMux) {
 	mux.Handle("POST /chat", AuthMiddleware(http.HandlerFunc(chat)))
+	mux.HandleFunc("GET /chat", test)
+}
+
+func test(w http.ResponseWriter, _ *http.Request) {
+	tmpl, err := template.ParseFiles("internal/templates/home.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func chat(w http.ResponseWriter, r *http.Request) {
