@@ -73,6 +73,9 @@ func CreateUser(id, email, name string) (types.User, error) {
 	}
 
 	stmt, err := db.Prepare("INSERT INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
+	if err != nil {
+		return types.User{}, err
+	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(id, email, name)
