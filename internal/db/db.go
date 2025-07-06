@@ -65,13 +65,7 @@ func GetUser(userID string) (types.User, error) {
 	return user, nil
 }
 
-func CreateUser(id, email, name string) (types.User, error) {
-	user, err := GetUser(id)
-	if err == nil {
-		UpdateUser(id, email, name)
-		return user, nil
-	}
-
+func CreateUser(id, email, name, timezone string) (types.User, error) {
 	stmt, err := db.Prepare("INSERT INTO users (user_id, email, name, timezone) VALUES (?, ?, ?)")
 	if err != nil {
 		return types.User{}, err
@@ -83,23 +77,23 @@ func CreateUser(id, email, name string) (types.User, error) {
 		return types.User{}, err
 	}
 
-	user = types.User{UserID: id, Email: email, Name: name}
+	user := types.User{UserID: id, Email: email, Name: name}
 	return user, nil
 }
 
-func UpdateUser(id, email, name string) (types.User, error) {
-	stmt, err := db.Prepare("UPDATE users SET email = ?, name = ? WHERE user_id = ?")
+func UpdateUser(id, email, name, timezone string) (types.User, error) {
+	stmt, err := db.Prepare("UPDATE users SET email = ?, name = ?, timezone = ? WHERE user_id = ?")
 	if err != nil {
 		return types.User{}, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(email, name, id)
+	_, err = stmt.Exec(email, name, timezone, id)
 	if err != nil {
 		return types.User{}, err
 	}
 
-	user := types.User{UserID: id, Email: email, Name: name}
+	user := types.User{UserID: id, Email: email, Name: name, Timezone: timezone}
 
 	return user, nil
 }

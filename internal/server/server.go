@@ -12,15 +12,19 @@ import (
 )
 
 func Run() {
+	log.Print("Loading environment variables...")
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading environment: %v", err)
 	}
 	PORT := os.Getenv("PORT")
 
+	log.Print("Initializing database...")
 	db.Init()
+	log.Print("Initializing OAuth2 client...")
 	auth.Init()
 
+	log.Print("Initializing server...")
 	mux := http.NewServeMux()
 	handlers.Init(mux)
 

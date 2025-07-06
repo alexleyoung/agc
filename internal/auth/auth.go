@@ -40,7 +40,7 @@ func Init() {
 func GetClient(session types.Session) (*http.Client, error) {
 	time, err := time.Parse(time.RFC3339, session.ExpiresAt)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse session expiration time:\n" + err.Error())
+		return nil, fmt.Errorf("Failed to parse session expiration time:\n%s", err.Error())
 	}
 
 	tok := &oauth2.Token{AccessToken: session.AccessToken, RefreshToken: session.RefreshToken, Expiry: time}
@@ -52,7 +52,7 @@ func GetAuthURL() string {
 	return config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 }
 
-func Authenticate(r *http.Request) (types.User, types.Session, error) {
+func Authenticate(r *http.Request, lookupTimezone func(session types.Session) (string, error)) (types.User, types.Session, error) {
 	// exchange code
 	tok, err := config.Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
@@ -69,19 +69,33 @@ func Authenticate(r *http.Request) (types.User, types.Session, error) {
 	idToken, err := parseIDToken(idTokenRaw)
 	if err != nil {
 		log.Print("Failed to parse id_token:", err)
-		return types.User{}, types.Session{}, fmt.Errorf("Failed to parse id_token: " + err.Error())
+		return types.User{}, types.Session{}, fmt.Errorf("Failed to parse id_token:\n%s", err.Error())
 	}
 
-	// create user and session as necessary
-	user, err := db.CreateUser(idToken.Sub, idToken.Email, idToken.Name)
-	if err != nil {
-		log.Print("Failed to create user:", err)
-		return types.User{}, types.Session{}, fmt.Errorf("Failed to create user:\n" + err.Error())
-	}
+	// create session
 	session, err := db.CreateSession(idToken.Sub, tok.AccessToken, tok.RefreshToken, tok.Expiry)
 	if err != nil {
 		log.Print("Failed to create session:", err)
-		return types.User{}, types.Session{}, fmt.Errorf("Failed to create session:\n" + err.Error())
+		return types.User{}, types.Session{}, fmt.Errorf("Failed to create session:\n%s", err.Error())
+	}
+
+	user, err := db.GetUser(idToken.Sub)
+
+	// if no user, create one
+	if err != nil {
+		timezone := ""
+		if lookupTimezone != nil {
+			timezone, err = lookupTimezone(session)
+			if err != nil {
+				log.Printf("Failed to look up timezone: %v", err)
+			}
+		}
+
+		user, err = db.CreateUser(idToken.Sub, idToken.Email, idToken.Name, timezone)
+		if err != nil {
+			log.Print("Failed to create user:", err)
+			return types.User{}, types.Session{}, fmt.Errorf("Failed to create user:\n%s", err.Error())
+		}
 	}
 
 	return user, session, nil
@@ -90,7 +104,7 @@ func Authenticate(r *http.Request) (types.User, types.Session, error) {
 func RefreshToken(session types.Session) (*oauth2.Token, error) {
 	expiry, err := time.Parse(time.RFC3339, session.ExpiresAt)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse session expiration time:\n" + err.Error())
+		return nil, fmt.Errorf("Failed to parse session expiration time:\n%s", err.Error())
 	}
 
 	tok := &oauth2.Token{

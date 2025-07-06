@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/alexleyoung/auto-gcal/internal/auth"
+	"github.com/alexleyoung/auto-gcal/internal/calendar"
+	"github.com/alexleyoung/auto-gcal/internal/types"
 )
 
 func setupAuth(mux *http.ServeMux) {
@@ -17,7 +19,14 @@ func getAuthURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
-	user, session, err := auth.Authenticate(r)
+	user, session, err := auth.Authenticate(r, func(session types.Session) (string, error) {
+		cal, err := calendar.GetCalendar(r.Context(), session, "primary")
+		if err != nil {
+			return "", err
+		}
+		return cal.TimeZone, nil
+	})
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
