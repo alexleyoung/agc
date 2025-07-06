@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Auto-GCal</title>
+</head>
+
+<body>
+	<h1>Welcome to Auto-GCal</h1>
+
+	<a href="/auth" target="_blank">
+		<button>Login with Google</button>
+	</a>
+
+	<h2>Chat</h2>
+	<form id="chat-form">
+		<input type="text" name="prompt" placeholder="Enter your prompt" required>
+		<button type="submit">Send</button>
+	</form>
+
+	<div id="response" style="margin-top: 1em; white-space: pre-wrap;"></div>
+
+	<script>
+		document.getElementById('chat-form').addEventListener('submit', async function (e) {
+			e.preventDefault();
+			const form = e.target;
+			const prompt = form.prompt.value;
+
+			const body = {
+				prompt: prompt,
+				model: "gemini-2.0-flash",      // optional
+				history: []     // optional
+			};
+
+			try {
+				const res = await fetch('/chat', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify(body)
+				});
+
+				if (!res.ok) {
+					const errorText = await res.text();
+					document.getElementById('response').textContent = `Error: ${errorText}`;
+					return;
+				}
+
+				const data = await res.json();
+				console.log(data);
+
+				// Assuming response format: data.Candidates[0].Content.Parts[0]
+				const text = data?.candidates?.[0]?.content?.parts?.[0].text || "[No response text]";
+				document.getElementById('response').textContent = text;
+
+			} catch (err) {
+				document.getElementById('response').textContent = `Request failed: ${err}`;
+			}
+		});
+	</script>
+</body>
+
+</html>
