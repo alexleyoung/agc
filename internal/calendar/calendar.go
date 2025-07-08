@@ -2,7 +2,6 @@ package calendar
 
 import (
 	"log"
-	"time"
 
 	"github.com/alexleyoung/auto-gcal/internal/auth"
 	"github.com/alexleyoung/auto-gcal/internal/types"
@@ -10,11 +9,6 @@ import (
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
-
-// Get the current UTC timestamp as string
-func Now() string {
-	return time.Now().UTC().Format(time.RFC3339)
-}
 
 func GetCalendar(ctx context.Context, session types.Session, calendar string) (*calendar.Calendar, error) {
 	srv, err := getService(ctx, session)

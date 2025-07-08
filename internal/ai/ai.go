@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/alexleyoung/auto-gcal/internal/calendar"
+	"github.com/alexleyoung/auto-gcal/internal/db"
 	"github.com/alexleyoung/auto-gcal/internal/types"
+
 	"google.golang.org/genai"
 )
 
@@ -17,6 +20,7 @@ const (
 	SYSTEM_PROMPT = `You are an intelligent assistant that helps users manage their Google Calendar.
 Your job is to extract relevant details from user input—like the event title, start and end times, and optional descriptions—and call the appropriate functions to schedule the event.
 Always try to schedule the event; if it fails, simply let the user know the error.
+If a user schedules an event relative to their current time without specifying a timezone, use the user's default timezone.
 After scheduling, confirm success by summarizing the event details back to the user in natural language.`
 )
 
@@ -40,6 +44,10 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 	{
 		Name:        "get_current_time",
 		Description: "Fetches the current time in UTC as an RFC3339 string",
+	},
+	{
+		Name:        "get_default_user_timezone",
+		Description: "Fetches the user's default timezone",
 	},
 }
 
@@ -127,8 +135,15 @@ func executeFunctionCall(ctx context.Context, session types.Session, name string
 		return fmt.Sprintf("Successfully created event \"%s\"", ev.Summary), nil
 
 	case "get_current_time":
-		time := calendar.Now()
+		time := time.Now().UTC().Format(time.RFC3339)
 		return fmt.Sprintf("Current time: %s", time), nil
+
+	case "get_default_user_timezone":
+		user, err := db.GetUser(session.UserID)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("Default user timezone: %s", user.Timezone), nil
 	}
 
 	return "", fmt.Errorf("Unknown function: %s", name)
