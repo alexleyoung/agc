@@ -20,13 +20,13 @@ func Run() {
 	PORT := os.Getenv("PORT")
 
 	db.Init()
-	log.Print("Initialized database")
+	log.Print("Successfully initialized database")
 	auth.Init()
-	log.Print("Initialized OAuth2 client")
+	log.Print("Successfully initialized OAuth2 client")
 
 	mux := http.NewServeMux()
 	handlers.Init(mux)
-	log.Print("Initialized handlers")
+	log.Print("Successfully initialized handlers")
 
 	log.Println("Server starting on port :" + PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, mux))
