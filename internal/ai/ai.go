@@ -37,7 +37,7 @@ var functionDeclarations = []*genai.FunctionDeclaration{{
 			"description": {Type: "string", Description: "The description of the event. Optional."},
 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Optional."},
+			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
 		},
 	},
 },

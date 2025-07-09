@@ -57,7 +57,7 @@ func GetUser(userID string) (types.User, error) {
 
 	row := stmt.QueryRow(userID)
 	var user types.User
-	err = row.Scan(&user.UserID, &user.Email, &user.Name)
+	err = row.Scan(&user.UserID, &user.Email, &user.Name, &user.Timezone, &user.CreatedAt)
 	if err != nil {
 		return types.User{}, err
 	}

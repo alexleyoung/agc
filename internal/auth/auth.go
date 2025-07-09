@@ -82,7 +82,7 @@ func Authenticate(r *http.Request, lookupTimezone func(session types.Session) (s
 	user, err := db.GetUser(idToken.Sub)
 
 	// if no user, create one
-	if err != nil {
+	if user.UserID == "" {
 		timezone := ""
 		if lookupTimezone != nil {
 			timezone, err = lookupTimezone(session)
