@@ -9,6 +9,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+var defaultPath = "/.config/agc/"
+var configType = "toml"
+var configName = "config"
+
 var (
 	cfgFile string
 
@@ -24,34 +28,37 @@ Google Calendar via through natural language.`,
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/agcli/config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/"+defaultPath+configName+"."+configType+")")
 	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 
 	rootCmd.AddCommand(config.Cmd)
 }
 
 func initConfig() {
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
+	defaultPath = home + defaultPath
+
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search in $HOME/.config/agc for agcli.conf
-		path := home + "/.config/agcli"
-		viper.AddConfigPath(path)
-		viper.SetConfigType("toml")
-		viper.SetConfigName("config")
+		// Search in $HOME/.config/agc for agc.conf
+		viper.AddConfigPath(defaultPath)
+		viper.SetConfigType(configType)
+		viper.SetConfigName(configName)
 	}
 
 	viper.AutomaticEnv()
 
-	var err error
 	if err = viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 		return
 	} else if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		// mkdir
+		if err := os.MkdirAll(defaultPath, os.ModePerm); err != nil {
+			cobra.CheckErr(err)
+		}
+
 		// create file for user
 		err = viper.SafeWriteConfig()
 		if err != nil {
