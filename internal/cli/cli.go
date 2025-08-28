@@ -50,25 +50,24 @@ func initConfig() {
 
 	viper.AutomaticEnv()
 
-	if err = viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-		return
-	} else if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		// mkdir
-		if err := os.MkdirAll(defaultPath, os.ModePerm); err != nil {
-			cobra.CheckErr(err)
-		}
+	if err = viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// mkdir
+			if err := os.MkdirAll(defaultPath, os.ModePerm); err != nil {
+				cobra.CheckErr(err)
+			}
 
-		// create file for user
-		err = viper.SafeWriteConfig()
-		if err != nil {
+			// create file for user
+			err = viper.SafeWriteConfig()
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			// read in new config
+			viper.ReadInConfig()
+		} else {
 			cobra.CheckErr(err)
 		}
-		// read in new config
-		viper.ReadInConfig()
-		fmt.Printf("Config file created at: %s\n", viper.ConfigFileUsed())
 	}
-	cobra.CheckErr(err)
 }
 
 func Execute() {
