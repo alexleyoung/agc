@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/alexleyoung/auto-gcal/internal/ai"
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/ai"
+	"github.com/alexleyoung/agc/internal/types"
 )
 
 func setupAI(mux *http.ServeMux) {

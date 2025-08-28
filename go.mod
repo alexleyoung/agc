@@ -1,4 +1,4 @@
-module github.com/alexleyoung/auto-gcal
+module github.com/alexleyoung/agc
 
 go 1.24.2
 

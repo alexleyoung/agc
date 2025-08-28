@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/types"
 	"golang.org/x/net/context"
 	"google.golang.org/api/calendar/v3"
 )

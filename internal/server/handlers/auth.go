@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/alexleyoung/auto-gcal/internal/auth"
-	"github.com/alexleyoung/auto-gcal/internal/calendar"
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/auth"
+	"github.com/alexleyoung/agc/internal/calendar"
+	"github.com/alexleyoung/agc/internal/types"
 )
 
 func setupAuth(mux *http.ServeMux) {

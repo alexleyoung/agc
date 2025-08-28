@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexleyoung/auto-gcal/internal/db"
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/db"
+	"github.com/alexleyoung/agc/internal/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"

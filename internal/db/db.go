@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/types"
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )

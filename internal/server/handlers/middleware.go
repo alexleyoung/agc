@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/alexleyoung/auto-gcal/internal/auth"
-	"github.com/alexleyoung/auto-gcal/internal/db"
+	"github.com/alexleyoung/agc/internal/auth"
+	"github.com/alexleyoung/agc/internal/db"
 )
 
 type contextKey string

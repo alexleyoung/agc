@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/alexleyoung/auto-gcal/internal/server"
+	"github.com/alexleyoung/agc/internal/app"
 )
 
 func main() {
-	server.Run()
+	app.Run()
 }
+

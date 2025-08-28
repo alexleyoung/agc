@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/alexleyoung/auto-gcal/internal/auth"
-	"github.com/alexleyoung/auto-gcal/internal/db"
-	"github.com/alexleyoung/auto-gcal/internal/server/handlers"
+	"github.com/alexleyoung/agc/internal/auth"
+	"github.com/alexleyoung/agc/internal/db"
+	"github.com/alexleyoung/agc/internal/server/handlers"
 	"github.com/joho/godotenv"
 )
 

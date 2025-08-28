@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/alexleyoung/auto-gcal/internal/calendar"
-	"github.com/alexleyoung/auto-gcal/internal/db"
-	"github.com/alexleyoung/auto-gcal/internal/types"
+	"github.com/alexleyoung/agc/internal/calendar"
+	"github.com/alexleyoung/agc/internal/db"
+	"github.com/alexleyoung/agc/internal/types"
 
 	"google.golang.org/genai"
 )
