@@ -1,3 +1,3 @@
 # AGC (Auto Google Calendar)
 
-http server for interacting with google calendar with natural langauge. yippee!
+package for interacting with google calendar through natural langauge. yippee!
