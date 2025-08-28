@@ -1,4 +1,4 @@
 all: run
 
 run:
-	go run cmd/agc/agc.go
+	go run cmd/agcli/main.go
