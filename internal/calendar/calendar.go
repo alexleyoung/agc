@@ -1,11 +1,11 @@
 package calendar
 
 import (
+	"context"
 	"log"
 
 	"github.com/alexleyoung/agc/internal/auth"
 	"github.com/alexleyoung/agc/internal/types"
-	"golang.org/x/net/context"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )

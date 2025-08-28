@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexleyoung/agc/internal/db"
 	"github.com/alexleyoung/agc/internal/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -66,39 +65,41 @@ func Authenticate(r *http.Request, lookupTimezone func(session types.Session) (s
 		log.Print("Malformed token")
 		return types.User{}, types.Session{}, fmt.Errorf("Malformed token")
 	}
-	idToken, err := parseIDToken(idTokenRaw)
+	// id token
+	_, err = parseIDToken(idTokenRaw)
 	if err != nil {
 		log.Print("Failed to parse id_token:", err)
 		return types.User{}, types.Session{}, fmt.Errorf("Failed to parse id_token:\n%s", err.Error())
 	}
 
 	// create session
-	session, err := db.CreateSession(idToken.Sub, tok.AccessToken, tok.RefreshToken, tok.Expiry)
-	if err != nil {
-		log.Print("Failed to create session:", err)
-		return types.User{}, types.Session{}, fmt.Errorf("Failed to create session:\n%s", err.Error())
-	}
-
-	user, err := db.GetUser(idToken.Sub)
+	// session, err := db.CreateSession(idToken.Sub, tok.AccessToken, tok.RefreshToken, tok.Expiry)
+	// if err != nil {
+	// 	log.Print("Failed to create session:", err)
+	// 	return types.User{}, types.Session{}, fmt.Errorf("Failed to create session:\n%s", err.Error())
+	// }
+	//
+	// user, err := db.GetUser(idToken.Sub)
 
 	// if no user, create one
-	if user.UserID == "" {
-		timezone := ""
-		if lookupTimezone != nil {
-			timezone, err = lookupTimezone(session)
-			if err != nil {
-				log.Printf("Failed to look up timezone: %v", err)
-			}
-		}
-
-		user, err = db.CreateUser(idToken.Sub, idToken.Email, idToken.Name, timezone)
-		if err != nil {
-			log.Print("Failed to create user:", err)
-			return types.User{}, types.Session{}, fmt.Errorf("Failed to create user:\n%s", err.Error())
-		}
-	}
-
-	return user, session, nil
+	// if user.UserID == "" {
+	// 	timezone := ""
+	// 	if lookupTimezone != nil {
+	// 		timezone, err = lookupTimezone(session)
+	// 		if err != nil {
+	// 			log.Printf("Failed to look up timezone: %v", err)
+	// 		}
+	// 	}
+	//
+	// 	user, err = db.CreateUser(idToken.Sub, idToken.Email, idToken.Name, timezone)
+	// 	if err != nil {
+	// 		log.Print("Failed to create user:", err)
+	// 		return types.User{}, types.Session{}, fmt.Errorf("Failed to create user:\n%s", err.Error())
+	// 	}
+	// }
+	//
+	// return user, session, nil
+	return types.User{}, types.Session{}, nil
 }
 
 func RefreshToken(session types.Session) (*oauth2.Token, error) {
@@ -121,10 +122,10 @@ func RefreshToken(session types.Session) (*oauth2.Token, error) {
 	}
 
 	if newToken.AccessToken != session.AccessToken || newToken.Expiry != expiry {
-		err = db.UpdateSessionTokens(session.ID, newToken.AccessToken, newToken.Expiry)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update session: %w", err)
-		}
+		// err = db.UpdateSessionTokens(session.ID, newToken.AccessToken, newToken.Expiry)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("failed to update session: %w", err)
+		// }
 	}
 
 	return newToken, nil

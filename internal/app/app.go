@@ -2,12 +2,9 @@ package app
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/alexleyoung/agc/internal/ai"
 )
 
 func Run() {
@@ -19,8 +16,7 @@ func Run() {
 			fmt.Println(err)
 			continue
 		}
-
-		// ai.Chat(context.Background())
+		fmt.Printf("Echo: %s\n", input)
 	}
 }
 

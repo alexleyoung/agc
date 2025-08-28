@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/alexleyoung/agc/internal/calendar"
-	"github.com/alexleyoung/agc/internal/db"
 	"github.com/alexleyoung/agc/internal/types"
 
 	"google.golang.org/genai"
@@ -137,13 +136,6 @@ func executeFunctionCall(ctx context.Context, session types.Session, name string
 	case "get_current_time":
 		time := time.Now().UTC().Format(time.RFC3339)
 		return fmt.Sprintf("Current time: %s", time), nil
-
-	case "get_default_user_timezone":
-		user, err := db.GetUser(session.UserID)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("Default user timezone: %s", user.Timezone), nil
 	}
 
 	return "", fmt.Errorf("Unknown function: %s", name)
