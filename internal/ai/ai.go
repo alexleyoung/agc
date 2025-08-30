@@ -57,6 +57,17 @@ var functionDeclarations = []*genai.FunctionDeclaration{
 		},
 	},
 	{
+		Name:        "quick_add_event",
+		Description: "Creates a new event in the user's calendar with natural language.",
+		Parameters: &genai.Schema{
+			Type: "object",
+			Properties: map[string]*genai.Schema{
+				"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Required."},
+				"query":       {Type: "string", Description: "The query to use to create the event. Required."},
+			},
+		},
+	},
+	{
 		Name:        "list_calendars",
 		Description: "Lists all of the user's calendars",
 	},

@@ -8,6 +8,22 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
+func QuickAddEvent(ctx context.Context, calendarID, query string) (*calendar.Event, error) {
+	srv, err := getService(ctx)
+	if err != nil {
+		log.Printf("Unable to retrieve calendar service: %v", err)
+		return nil, err
+	}
+
+	ev, err := srv.Events.QuickAdd(calendarID, query).Do()
+	if err != nil {
+		log.Printf("Unable to retrieve event: %v", err)
+		return nil, err
+	}
+
+	return ev, nil
+}
+
 func CreateEvent(ctx context.Context, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
 	srv, err := getService(ctx)
 	if err != nil {
