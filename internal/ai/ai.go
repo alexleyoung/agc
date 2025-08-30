@@ -107,14 +107,12 @@ func Chat(ctx context.Context, model string, history []*genai.Content, prompt st
 			if err != nil {
 				return &genai.GenerateContentResponse{}, fmt.Errorf("failed to marshal args: %w", err)
 			}
-			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, args)
 
 			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
 				return &genai.GenerateContentResponse{}, err
 			}
-			log.Print("function execution successful")
 
 			history = append(history, &genai.Content{
 				Role:  "model",

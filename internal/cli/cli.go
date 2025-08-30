@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
@@ -23,15 +24,25 @@ var (
 		Short: "Interact with Google Calendar through natural language",
 		Long: `agc is a command line tool that allows you to interact with 
 Google Calendar via through natural language.`,
+		// Start a session
 		Run: func(cmd *cobra.Command, args []string) {
-			query := strings.Join(args, " ")
 			history := make([]*genai.Content, 0)
-			resp, err := ai.Chat(cmd.Context(), "gemini-2.5-flash", history, query)
-			if err != nil {
-				cobra.CheckErr(err)
-				return
+			for true {
+				buf := bufio.NewReader(os.Stdin)
+				fmt.Print("usr> ")
+				query, err := getInput(buf)
+				if err != nil {
+					cobra.CheckErr(err)
+					return
+				}
+
+				resp, err := ai.Chat(cmd.Context(), "gemini-2.5-flash", history, query)
+				if err != nil {
+					cobra.CheckErr(err)
+					return
+				}
+				fmt.Println("agc> " + resp.Text())
 			}
-			fmt.Println(resp.Text())
 		},
 	}
 
@@ -101,6 +112,16 @@ func initConfig() {
 			cobra.CheckErr(err)
 		}
 	}
+}
+
+func getInput(reader *bufio.Reader) (string, error) {
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+
+	input = strings.TrimSpace(input)
+	return input, nil
 }
 
 func Execute() {
