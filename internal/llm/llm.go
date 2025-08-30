@@ -11,15 +11,6 @@ import (
 	"google.golang.org/genai"
 )
 
-var TEMPERATURE float32 = 0
-var CONFIG = &genai.GenerateContentConfig{
-	SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
-	Tools: []*genai.Tool{
-		{FunctionDeclarations: functionDeclarations},
-	},
-	Temperature: &TEMPERATURE,
-}
-
 func Query(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, []*genai.Content, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  viper.Get("GEMINI_API_KEY").(string),
@@ -70,18 +61,4 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 		return result, history, nil
 	}
 	return &genai.GenerateContentResponse{}, history, fmt.Errorf("Max steps reached without resolution")
-}
-
-func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
-	switch name {
-	case "create_event":
-		return create_event_call(ctx, argsJSON)
-	case "quick_add_event":
-		return quick_add_event_call(ctx, argsJSON)
-	case "list_calendars":
-		return list_calendars_call(ctx)
-	case "get_current_time":
-		return get_current_time_call(ctx)
-	}
-	return "", fmt.Errorf("Unknown function: %s", name)
 }

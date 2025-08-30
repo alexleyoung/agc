@@ -4,6 +4,18 @@ import (
 	"fmt"
 
 	"google.golang.org/api/calendar/v3"
+	"google.golang.org/genai"
+)
+
+var (
+	TEMPERATURE float32 = 0
+	CONFIG              = &genai.GenerateContentConfig{
+		SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
+		Tools: []*genai.Tool{
+			{FunctionDeclarations: functionDeclarations},
+		},
+		Temperature: &TEMPERATURE,
+	}
 )
 
 const (

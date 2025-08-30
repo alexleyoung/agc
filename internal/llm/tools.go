@@ -102,3 +102,17 @@ func get_current_time_call(ctx context.Context) (string, error) {
 	time := time.Now().UTC().Format(time.RFC3339)
 	return fmt.Sprintf("Current time: %s", time), nil
 }
+
+func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
+	switch name {
+	case "create_event":
+		return create_event_call(ctx, argsJSON)
+	case "quick_add_event":
+		return quick_add_event_call(ctx, argsJSON)
+	case "list_calendars":
+		return list_calendars_call(ctx)
+	case "get_current_time":
+		return get_current_time_call(ctx)
+	}
+	return "", fmt.Errorf("Unknown function: %s", name)
+}
