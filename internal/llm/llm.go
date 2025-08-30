@@ -12,37 +12,37 @@ import (
 )
 
 var TEMPERATURE float32 = 0
+var CONFIG = &genai.GenerateContentConfig{
+	SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
+	Tools: []*genai.Tool{
+		{FunctionDeclarations: functionDeclarations},
+	},
+	Temperature: &TEMPERATURE,
+}
 
-func Query(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
+func Query(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, []*genai.Content, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  viper.Get("GEMINI_API_KEY").(string),
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
 		log.Printf("Error generating AI client: %v", err)
-		return &genai.GenerateContentResponse{}, err
+		return &genai.GenerateContentResponse{}, history, err
 	}
-
-	history = append(history, &genai.Content{
-		Role:  "user",
-		Parts: []*genai.Part{{Text: prompt}},
-	})
 
 	var result *genai.GenerateContentResponse
 	for range MAX_STEPS {
 		// prompt model
-		result, err = client.Models.GenerateContent(ctx, model, history, &genai.GenerateContentConfig{
-			SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
-			Tools: []*genai.Tool{
-				{FunctionDeclarations: functionDeclarations},
-			},
-			Temperature: &TEMPERATURE,
-		})
+		chat, err := client.Chats.Create(ctx, model, CONFIG, history)
+
+		msg := genai.Part{Text: prompt}
+		result, err = chat.SendMessage(ctx, msg)
 		if err != nil {
 			log.Printf("Error getting model response: %v", err)
-			return &genai.GenerateContentResponse{}, err
+			return &genai.GenerateContentResponse{}, history, err
 		}
 
+		history = append(history, &genai.Content{Role: "user", Parts: []*genai.Part{&msg}})
 		history = append(history, result.Candidates[0].Content)
 
 		// check for function calls
@@ -52,13 +52,13 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 
 			args, err := json.Marshal(fn.Args)
 			if err != nil {
-				return &genai.GenerateContentResponse{}, fmt.Errorf("failed to marshal args: %w", err)
+				return &genai.GenerateContentResponse{}, history, fmt.Errorf("failed to marshal args: %w", err)
 			}
 
 			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
-				return &genai.GenerateContentResponse{}, err
+				return &genai.GenerateContentResponse{}, history, err
 			}
 
 			history = append(history, &genai.Content{
@@ -67,9 +67,9 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 			})
 			continue
 		}
-		return result, nil
+		return result, history, nil
 	}
-	return &genai.GenerateContentResponse{}, fmt.Errorf("Max steps reached without resolution")
+	return &genai.GenerateContentResponse{}, history, fmt.Errorf("Max steps reached without resolution")
 }
 
 func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {

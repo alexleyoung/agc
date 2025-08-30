@@ -36,11 +36,13 @@ Google Calendar via through natural language.`,
 					return
 				}
 
-				resp, err := llm.Query(cmd.Context(), "gemini-2.5-flash", history, query)
+				resp, hist, err := llm.Query(cmd.Context(), "gemini-2.5-flash", history, query)
 				if err != nil {
 					cobra.CheckErr(err)
 					return
 				}
+				history = hist
+
 				fmt.Println("agc> " + resp.Text())
 			}
 		},
