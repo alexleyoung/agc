@@ -52,24 +52,52 @@ func CreateEvent(ctx context.Context, calendarID, summary, description, start, e
 	return ev, nil
 }
 
-func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error) {
-	list := make([]*calendar.Event, 0)
+func UpdateEvent(ctx context.Context, calendarID string, event *calendar.Event) error {
+	srv, err := getService(ctx)
+	if err != nil {
+		log.Printf("Unable to retrieve calendar service: %v", err)
+		return err
+	}
+	_, err = srv.Events.Update(calendarID, event.Id, event).Do()
+	return err
+}
 
+func GetEvent(ctx context.Context, calendarID, eventID string) (*calendar.Event, error) {
 	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
 	}
 
-	time := time.Now().Format(time.RFC3339)
-	orderBy := "startTime"
-	maxResults := int64(50)
-	events, err := srv.Events.List(calendarID).ShowDeleted(false).TimeMin(time).OrderBy(orderBy).MaxResults(maxResults).Do()
+	event, err := srv.Events.Get(calendarID, eventID).Do()
+	if err != nil {
+		log.Printf("Unable to retrieve event: %v", err)
+		return nil, err
+	}
+
+	return event, nil
+}
+
+func GetEvents(ctx context.Context, calendarID, minTime, maxTime string, maxResults int64) ([]*calendar.Event, error) {
+	srv, err := getService(ctx)
+	if err != nil {
+		log.Printf("Unable to retrieve calendar service: %v", err)
+		return nil, err
+	}
+
+	if minTime == "" {
+		minTime = time.Now().Format(time.RFC3339)
+	}
+	query := srv.Events.List(calendarID).ShowDeleted(false).OrderBy("startTime").MaxResults(maxResults).TimeMin(minTime)
+	if maxTime != "" {
+		query = query.TimeMax(maxTime)
+	}
+
+	events, err := query.Do()
 	if err != nil {
 		log.Printf("Unable to retrieve events: %v", err)
 		return nil, err
 	}
-	list = events.Items
 
-	return list, nil
+	return events.Items, nil
 }
