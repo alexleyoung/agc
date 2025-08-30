@@ -1,4 +1,4 @@
-package ai
+package llm
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 var TEMPERATURE float32 = 0
 
-func Chat(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
+func Query(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  viper.Get("GEMINI_API_KEY").(string),
 		Backend: genai.BackendGeminiAPI,

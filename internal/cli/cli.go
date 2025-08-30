@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/alexleyoung/agc/internal/ai"
+	"github.com/alexleyoung/agc/internal/llm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/genai"
@@ -36,7 +36,7 @@ Google Calendar via through natural language.`,
 					return
 				}
 
-				resp, err := ai.Chat(cmd.Context(), "gemini-2.5-flash", history, query)
+				resp, err := llm.Query(cmd.Context(), "gemini-2.5-flash", history, query)
 				if err != nil {
 					cobra.CheckErr(err)
 					return
