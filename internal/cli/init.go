@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alexleyoung/agc/internal/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -21,6 +22,14 @@ var (
 		Long: `agc is a command line tool that allows you to interact with 
 Google Calendar via through natural language.`,
 		Run: func(cmd *cobra.Command, args []string) {},
+	}
+
+	authCmd = &cobra.Command{
+		Use:   "auth",
+		Short: "Login to Google Calendar",
+		Run: func(cmd *cobra.Command, args []string) {
+			auth.GetClient()
+		},
 	}
 )
 

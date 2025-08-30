@@ -11,7 +11,7 @@ import (
 )
 
 func GetCalendar(ctx context.Context, session types.Session, calendar string) (*calendar.Calendar, error) {
-	srv, err := getService(ctx, session)
+	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
@@ -26,12 +26,8 @@ func GetCalendar(ctx context.Context, session types.Session, calendar string) (*
 	return cal, nil
 }
 
-func getService(ctx context.Context, session types.Session) (*calendar.Service, error) {
-	client, err := auth.GetClient(session)
-	if err != nil {
-		return nil, err
-	}
-
+func getService(ctx context.Context) (*calendar.Service, error) {
+	client := auth.GetClient()
 	srv, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	return srv, err
 }

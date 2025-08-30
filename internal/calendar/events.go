@@ -10,7 +10,7 @@ import (
 )
 
 func CreateEvent(ctx context.Context, session types.Session, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
-	srv, err := getService(ctx, session)
+	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return &calendar.Event{}, err
@@ -55,7 +55,7 @@ func CreateEvent(ctx context.Context, session types.Session, calendarID, summary
 func GetEvents(ctx context.Context, session types.Session, calendarID string) ([]*calendar.Event, error) {
 	list := make([]*calendar.Event, 0)
 
-	srv, err := getService(ctx, session)
+	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
