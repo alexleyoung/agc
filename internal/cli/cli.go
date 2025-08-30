@@ -3,7 +3,9 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/alexleyoung/agc/internal/ai"
 	"github.com/alexleyoung/agc/internal/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,7 +23,10 @@ var (
 		Short: "Interact with Google Calendar through natural language",
 		Long: `agc is a command line tool that allows you to interact with 
 Google Calendar via through natural language.`,
-		Run: func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			query := strings.Join(args, " ")
+			ai.Chat(cmd.Context(), "gemini-2.5-flash", nil, query)
+		},
 	}
 
 	authCmd = &cobra.Command{
@@ -33,12 +38,6 @@ Google Calendar via through natural language.`,
 	}
 
 	configCmd = &cobra.Command{
-		Use:   "config",
-		Short: "Configure agc",
-		Run:   func(cmd *cobra.Command, args []string) {},
-	}
-
-	queryCmd = &cobra.Command{
 		Use:   "config",
 		Short: "Configure agc",
 		Run:   func(cmd *cobra.Command, args []string) {},

@@ -5,11 +5,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/alexleyoung/agc/internal/types"
 	"google.golang.org/api/calendar/v3"
 )
 
-func CreateEvent(ctx context.Context, session types.Session, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
+func CreateEvent(ctx context.Context, calendarID, summary, description, start, end, timezone string) (*calendar.Event, error) {
 	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
@@ -41,6 +40,7 @@ func CreateEvent(ctx context.Context, session types.Session, calendarID, summary
 			DateTime: end,
 			TimeZone: timezone,
 		},
+		Recurrence: nil,
 	}
 
 	ev, err = srv.Events.Insert(calendarID, ev).Do()
@@ -52,7 +52,7 @@ func CreateEvent(ctx context.Context, session types.Session, calendarID, summary
 	return ev, nil
 }
 
-func GetEvents(ctx context.Context, session types.Session, calendarID string) ([]*calendar.Event, error) {
+func GetEvents(ctx context.Context, calendarID string) ([]*calendar.Event, error) {
 	list := make([]*calendar.Event, 0)
 
 	srv, err := getService(ctx)

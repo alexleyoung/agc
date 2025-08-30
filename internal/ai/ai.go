@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/alexleyoung/agc/internal/calendar"
-	"github.com/alexleyoung/agc/internal/types"
 
 	"google.golang.org/genai"
 )
@@ -25,32 +24,33 @@ After scheduling, confirm success by summarizing the event details back to the u
 
 var TEMPERATURE float32 = 0
 
-var functionDeclarations = []*genai.FunctionDeclaration{{
-	Name:        "create_event",
-	Description: "Creates a new event in the user's calendar.",
-	Parameters: &genai.Schema{
-		Type: "object",
-		Properties: map[string]*genai.Schema{
-			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
-			"summary":     {Type: "string", Description: "The title of the event. Required."},
-			"description": {Type: "string", Description: "The description of the event. Optional."},
-			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
+var functionDeclarations = []*genai.FunctionDeclaration{
+	{
+		Name:        "create_event",
+		Description: "Creates a new event in the user's calendar.",
+		Parameters: &genai.Schema{
+			Type: "object",
+			Properties: map[string]*genai.Schema{
+				"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
+				"summary":     {Type: "string", Description: "The title of the event. Required."},
+				"description": {Type: "string", Description: "The description of the event. Optional."},
+				"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
+				"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
+				"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
+			},
 		},
 	},
-},
+	{
+		Name:        "list_calendars",
+		Description: "Lists all of the user's calendars",
+	},
 	{
 		Name:        "get_current_time",
 		Description: "Fetches the current time in UTC as an RFC3339 string",
 	},
-	{
-		Name:        "get_default_user_timezone",
-		Description: "Fetches the user's default timezone",
-	},
 }
 
-func Chat(ctx context.Context, session types.Session, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
+func Chat(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  os.Getenv("GEMINI_API_KEY"),
 		Backend: genai.BackendGeminiAPI,
@@ -93,7 +93,7 @@ func Chat(ctx context.Context, session types.Session, model string, history []*g
 			}
 			log.Printf("Model requested function: %s\nWith args: %s", fn.Name, args)
 
-			out, err := executeFunctionCall(ctx, session, fn.Name, args)
+			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
 				return &genai.GenerateContentResponse{}, err
@@ -111,7 +111,7 @@ func Chat(ctx context.Context, session types.Session, model string, history []*g
 	return &genai.GenerateContentResponse{}, fmt.Errorf("Max steps reached without resolution")
 }
 
-func executeFunctionCall(ctx context.Context, session types.Session, name string, argsJSON []byte) (string, error) {
+func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
 	switch name {
 	case "create_event":
 		var args struct {
@@ -127,11 +127,27 @@ func executeFunctionCall(ctx context.Context, session types.Session, name string
 			return "", fmt.Errorf("failed to decode args into struct: %w", err)
 		}
 
-		ev, err := calendar.CreateEvent(ctx, session, args.CalendarID, args.Summary, args.Description, args.Start, args.End, args.Timezone)
+		ev, err := calendar.CreateEvent(ctx, args.CalendarID, args.Summary, args.Description, args.Start, args.End, args.Timezone)
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("Successfully created event \"%s\"", ev.Summary), nil
+
+	case "list_calendars":
+		cals, err := calendar.ListCalendars(ctx)
+		if err != nil {
+			return "", err
+		}
+		var cal_strings string
+		for _, cal := range cals {
+			cal_strings += fmt.Sprintf("Summary: %s\n", cal.Summary)
+			cal_strings += fmt.Sprintf("ID: %s\n", cal.Id)
+			cal_strings += fmt.Sprintf("Description: %s\n", cal.Description)
+			cal_strings += fmt.Sprintf("Timezone: %s\n", cal.TimeZone)
+			cal_strings += fmt.Sprintf("IsPrimary: %s\n", cal.Primary)
+			cal_strings += "\n"
+		}
+		return fmt.Sprintf("Calendars:\n%s", cal_strings), nil
 
 	case "get_current_time":
 		time := time.Now().UTC().Format(time.RFC3339)
