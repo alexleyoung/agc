@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/alexleyoung/agc/internal/ai"
-	"github.com/alexleyoung/agc/internal/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/genai"
 )
 
 var defaultPath = "/.config/agc/"
@@ -25,15 +25,13 @@ var (
 Google Calendar via through natural language.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			query := strings.Join(args, " ")
-			ai.Chat(cmd.Context(), "gemini-2.5-flash", nil, query)
-		},
-	}
-
-	authCmd = &cobra.Command{
-		Use:   "auth",
-		Short: "Login to Google Calendar",
-		Run: func(cmd *cobra.Command, args []string) {
-			auth.GetClient()
+			history := make([]*genai.Content, 0)
+			resp, err := ai.Chat(cmd.Context(), "gemini-2.5-flash", history, query)
+			if err != nil {
+				cobra.CheckErr(err)
+				return
+			}
+			fmt.Println(resp.Text())
 		},
 	}
 
@@ -41,6 +39,20 @@ Google Calendar via through natural language.`,
 		Use:   "config",
 		Short: "Configure agc",
 		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+
+	configSetCmd = &cobra.Command{
+		Use:   "set",
+		Short: "Set a configuration value",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 2 {
+				cobra.CheckErr(fmt.Errorf("missing value"))
+				return
+			}
+			viper.Set(args[0], args[1])
+			err := viper.WriteConfig()
+			cobra.CheckErr(err)
+		},
 	}
 )
 
@@ -50,8 +62,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/"+defaultPath+configName+"."+configType+")")
 	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 
+	configCmd.AddCommand(configSetCmd)
 	rootCmd.AddCommand(configCmd)
-	rootCmd.AddCommand(authCmd)
 }
 
 func initConfig() {
