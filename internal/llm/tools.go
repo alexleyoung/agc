@@ -11,21 +11,21 @@ import (
 )
 
 var functionDeclarations = []*genai.FunctionDeclaration{
-	{
-		Name:        "create_event",
-		Description: "Creates a new event in the user's calendar.",
-		Parameters: &genai.Schema{
-			Type: "object",
-			Properties: map[string]*genai.Schema{
-				"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
-				"summary":     {Type: "string", Description: "The title of the event. Required."},
-				"description": {Type: "string", Description: "The description of the event. Optional."},
-				"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-				"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-				"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
-			},
-		},
-	},
+	// {
+	// 	Name:        "create_event",
+	// 	Description: "Creates a new event in the user's calendar.",
+	// 	Parameters: &genai.Schema{
+	// 		Type: "object",
+	// 		Properties: map[string]*genai.Schema{
+	// 			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
+	// 			"summary":     {Type: "string", Description: "The title of the event. Required."},
+	// 			"description": {Type: "string", Description: "The description of the event. Optional."},
+	// 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
+	// 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
+	// 			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
+	// 		},
+	// 	},
+	// },
 	{
 		Name:        "quick_add_event",
 		Description: "Creates a new event in the user's calendar with natural language.",

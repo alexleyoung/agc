@@ -21,20 +21,23 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 		return &genai.GenerateContentResponse{}, history, err
 	}
 
+	// create chat session
+	chat, err := client.Chats.Create(ctx, model, config, history)
+	if err != nil {
+		log.Printf("Error creating chat: %v", err)
+		return &genai.GenerateContentResponse{}, history, err
+	}
+	msg := genai.Part{Text: prompt}
+	history = append(history, &genai.Content{Role: "user", Parts: []*genai.Part{&msg}})
+
 	var result *genai.GenerateContentResponse
 	for range MAX_STEPS {
 		// prompt model
-		chat, err := client.Chats.Create(ctx, model, CONFIG, history)
-
-		msg := genai.Part{Text: prompt}
 		result, err = chat.SendMessage(ctx, msg)
 		if err != nil {
 			log.Printf("Error getting model response: %v", err)
 			return &genai.GenerateContentResponse{}, history, err
 		}
-
-		history = append(history, &genai.Content{Role: "user", Parts: []*genai.Part{&msg}})
-		history = append(history, result.Candidates[0].Content)
 
 		// check for function calls
 		fns := result.FunctionCalls()
@@ -46,16 +49,23 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 				return &genai.GenerateContentResponse{}, history, fmt.Errorf("failed to marshal args: %w", err)
 			}
 
+			fmt.Printf("Calling function: %s\n", fn.Name)
 			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
 				return &genai.GenerateContentResponse{}, history, err
 			}
 
-			history = append(history, &genai.Content{
-				Role:  "model",
-				Parts: []*genai.Part{{Text: fn.Name + " results: "}, {Text: out}},
-			})
+			history = append(history, result.Candidates[0].Content)
+			msg = genai.Part{
+				FunctionResponse: &genai.FunctionResponse{
+					Name: fn.Name,
+					Response: map[string]any{
+						"output": out,
+					},
+				},
+			}
+			history = append(history, &genai.Content{Role: "tool", Parts: []*genai.Part{&msg}})
 			continue
 		}
 		return result, history, nil

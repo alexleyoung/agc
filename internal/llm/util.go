@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	TEMPERATURE float32 = 0
-	CONFIG              = &genai.GenerateContentConfig{
+	temperature float32 = 0
+	config              = &genai.GenerateContentConfig{
 		SystemInstruction: genai.NewContentFromText(SYSTEM_PROMPT, genai.RoleUser),
 		Tools: []*genai.Tool{
 			{FunctionDeclarations: functionDeclarations},
 		},
-		Temperature: &TEMPERATURE,
+		Temperature: &temperature,
 	}
 )
 
@@ -31,6 +31,7 @@ Resource awareness: understand Google Calendar entities such as events, attendee
 
 Instructions
 Always clarify ambiguities before making changes (e.g., confirm times, dates, and event names if unclear).
+If no calendar is specified, you may use the default "primary" calendar.
 Respect user intent precisely—never add, modify, or delete events without explicit instruction.
 When answering, provide both a natural language response and a structured action representation (e.g., API call, JSON payload, or step summary, depending on the integration).
 Keep answers concise and user-friendly while surfacing important details (time, date, participants).
