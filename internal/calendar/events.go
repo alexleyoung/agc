@@ -78,13 +78,22 @@ func UpdateEvent(ctx context.Context, calendarID string, event *calendar.Event) 
 	return err
 }
 
+func DeleteEvent(ctx context.Context, calendarID, eventID string) error {
+	srv, err := getService(ctx)
+	if err != nil {
+		log.Printf("Unable to retrieve calendar service: %v", err)
+		return err
+	}
+	err = srv.Events.Delete(calendarID, eventID).Do()
+	return err
+}
+
 func GetEvent(ctx context.Context, calendarID, eventID string) (*calendar.Event, error) {
 	srv, err := getService(ctx)
 	if err != nil {
 		log.Printf("Unable to retrieve calendar service: %v", err)
 		return nil, err
 	}
-
 	event, err := srv.Events.Get(calendarID, eventID).Do()
 	if err != nil {
 		log.Printf("Unable to retrieve event: %v", err)
