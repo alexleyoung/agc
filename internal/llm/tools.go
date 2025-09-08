@@ -11,21 +11,6 @@ import (
 )
 
 var functionDeclarations = []*genai.FunctionDeclaration{
-	// {
-	// 	Name:        "create_event",
-	// 	Description: "Creates a new event in the user's calendar.",
-	// 	Parameters: &genai.Schema{
-	// 		Type: "object",
-	// 		Properties: map[string]*genai.Schema{
-	// 			"calendar_id": {Type: "string", Description: "The ID of the calendar to create the event in. Optional."},
-	// 			"summary":     {Type: "string", Description: "The title of the event. Required."},
-	// 			"description": {Type: "string", Description: "The description of the event. Optional."},
-	// 			"start":       {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-	// 			"end":         {Type: "string", Description: "The time, as a combined date-time value (formatted according to RFC3339) with NO offset. Required."},
-	// 			"timezone":    {Type: "string", Description: "The timezone the datetime represents. Required."},
-	// 		},
-	// 	},
-	// },
 	{
 		Name:        "quick_add_event",
 		Description: "Creates a new event in the user's calendar with natural language.",
@@ -44,6 +29,19 @@ var functionDeclarations = []*genai.FunctionDeclaration{
 	{
 		Name:        "get_current_time",
 		Description: "Fetches the current time in UTC as an RFC3339 string",
+	},
+	{
+		Name:        "get_events",
+		Description: "Fetches events from a calendar",
+		Parameters: &genai.Schema{
+			Type: "object",
+			Properties: map[string]*genai.Schema{
+				"calendar_id": {Type: "string", Description: "The ID of the calendar to fetch events from. Required."},
+				"min_time":    {Type: "string", Description: "The minimum time to fetch events from. Optional."},
+				"max_time":    {Type: "string", Description: "The maximum time to fetch events from. Optional."},
+				"max_results": {Type: "number", Description: "The maximum number of events to fetch. Optional."},
+			},
+		},
 	},
 }
 
@@ -103,6 +101,31 @@ func get_current_time_call(ctx context.Context) (string, error) {
 	return fmt.Sprintf("Current time: %s", time), nil
 }
 
+func get_events_call(ctx context.Context, argsJSON []byte) (string, error) {
+	var args struct {
+		CalendarID string `json:"calendar_id"`
+		MinTime    string `json:"min_time"`
+		MaxTime    string `json:"max_time"`
+		MaxResults int64  `json:"max_results"`
+	}
+
+	if err := json.Unmarshal(argsJSON, &args); err != nil {
+		return "", fmt.Errorf("failed to decode args into struct: %w", err)
+	}
+
+	events, err := calendar.GetEvents(ctx, args.CalendarID, args.MinTime, args.MaxTime, args.MaxResults)
+	if err != nil {
+		return "", err
+	}
+
+	var event_strings string
+	for _, event := range events {
+		event_strings += formatEvent(event)
+		event_strings += "\n"
+	}
+	return fmt.Sprintf("Events:\n%s", event_strings), nil
+}
+
 func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (string, error) {
 	switch name {
 	case "create_event":
@@ -113,6 +136,8 @@ func executeFunctionCall(ctx context.Context, name string, argsJSON []byte) (str
 		return list_calendars_call(ctx)
 	case "get_current_time":
 		return get_current_time_call(ctx)
+	case "get_events":
+		return get_events_call(ctx, argsJSON)
 	}
 	return "", fmt.Errorf("Unknown function: %s", name)
 }

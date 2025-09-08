@@ -113,7 +113,10 @@ func GetEvents(ctx context.Context, calendarID, minTime, maxTime string, maxResu
 	if minTime == "" {
 		minTime = time.Now().Format(time.RFC3339)
 	}
-	query := srv.Events.List(calendarID).ShowDeleted(false).OrderBy("startTime").MaxResults(maxResults).TimeMin(minTime)
+	if maxResults == 0 {
+		maxResults = 100
+	}
+	query := srv.Events.List(calendarID).ShowDeleted(false).SingleEvents(true).OrderBy("startTime").MaxResults(maxResults).TimeMin(minTime)
 	if maxTime != "" {
 		query = query.TimeMax(maxTime)
 	}
