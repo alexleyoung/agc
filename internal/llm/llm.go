@@ -11,32 +11,37 @@ import (
 	"google.golang.org/genai"
 )
 
-func Query(ctx context.Context, model string, history []*genai.Content, prompt string) (*genai.GenerateContentResponse, []*genai.Content, error) {
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey:  viper.Get("GEMINI_API_KEY").(string),
-		Backend: genai.BackendGeminiAPI,
-	})
-	if err != nil {
-		log.Printf("Error generating AI client: %v", err)
-		return &genai.GenerateContentResponse{}, history, err
+var client *genai.Client
+
+func CreateChat(ctx context.Context, model string, history []*genai.Content) (*genai.Chat, error) {
+	var err error
+	if client == nil {
+		client, err = genai.NewClient(ctx, &genai.ClientConfig{
+			APIKey:  viper.Get("GEMINI_API_KEY").(string),
+			Backend: genai.BackendGeminiAPI,
+		})
+		if err != nil {
+			log.Printf("Error generating AI client: %v", err)
+			return nil, err
+		}
 	}
 
-	// create chat session
 	chat, err := client.Chats.Create(ctx, model, config, history)
 	if err != nil {
 		log.Printf("Error creating chat: %v", err)
-		return &genai.GenerateContentResponse{}, history, err
+		return nil, err
 	}
-	msg := genai.Part{Text: prompt}
-	history = append(history, &genai.Content{Role: "user", Parts: []*genai.Part{&msg}})
+	return chat, nil
+}
 
-	var result *genai.GenerateContentResponse
+func Query(ctx context.Context, chat *genai.Chat, prompt string) (*genai.GenerateContentResponse, error) {
+	msg := genai.Part{Text: prompt}
 	for range MAX_STEPS {
 		// prompt model
-		result, err = chat.SendMessage(ctx, msg)
+		result, err := chat.SendMessage(ctx, msg)
 		if err != nil {
 			log.Printf("Error getting model response: %v", err)
-			return &genai.GenerateContentResponse{}, history, err
+			return &genai.GenerateContentResponse{}, err
 		}
 
 		// check for function calls
@@ -46,17 +51,17 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 
 			args, err := json.Marshal(fn.Args)
 			if err != nil {
-				return &genai.GenerateContentResponse{}, history, fmt.Errorf("failed to marshal args: %w", err)
+				return &genai.GenerateContentResponse{}, fmt.Errorf("failed to marshal args: %w", err)
 			}
 
 			fmt.Printf("Calling function: %s\n", fn.Name)
 			out, err := executeFunctionCall(ctx, fn.Name, args)
 			if err != nil {
 				log.Printf("Error executing function: %v", err)
-				return &genai.GenerateContentResponse{}, history, err
+				return &genai.GenerateContentResponse{}, err
 			}
 
-			history = append(history, result.Candidates[0].Content)
+			// set mesage as function response
 			msg = genai.Part{
 				FunctionResponse: &genai.FunctionResponse{
 					Name: fn.Name,
@@ -65,10 +70,9 @@ func Query(ctx context.Context, model string, history []*genai.Content, prompt s
 					},
 				},
 			}
-			history = append(history, &genai.Content{Role: "tool", Parts: []*genai.Part{&msg}})
 			continue
 		}
-		return result, history, nil
+		return result, nil
 	}
-	return &genai.GenerateContentResponse{}, history, fmt.Errorf("Max steps reached without resolution")
+	return &genai.GenerateContentResponse{}, fmt.Errorf("Max steps reached without resolution")
 }

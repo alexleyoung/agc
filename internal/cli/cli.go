@@ -26,7 +26,12 @@ var (
 Google Calendar via through natural language.`,
 		// Start a session
 		Run: func(cmd *cobra.Command, args []string) {
-			history := make([]*genai.Content, 0)
+			chat, err := llm.CreateChat(cmd.Context(), "gemini-2.5-flash", make([]*genai.Content, 0))
+			if err != nil {
+				cobra.CheckErr(err)
+				return
+			}
+
 			for true {
 				buf := bufio.NewReader(os.Stdin)
 				fmt.Print("usr> ")
@@ -36,12 +41,11 @@ Google Calendar via through natural language.`,
 					return
 				}
 
-				resp, hist, err := llm.Query(cmd.Context(), "gemini-2.5-flash", history, query)
+				resp, err := llm.Query(cmd.Context(), chat, query)
 				if err != nil {
 					cobra.CheckErr(err)
 					return
 				}
-				history = hist
 
 				fmt.Println("agc> " + resp.Text())
 			}
